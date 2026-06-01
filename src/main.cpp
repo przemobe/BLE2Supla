@@ -19,19 +19,32 @@ void setup() {
 
     cfgButton.configureAsConfigButton(&SuplaDevice);
 
-    initHtml();
-
     SuplaDevice.setName(DEVICE_NAME);
 
     SuplaDevice.setSuplaCACert(suplaCACert);
     SuplaDevice.setSupla3rdPartyCACert(supla3rdCACert);
+    SuplaDevice.setInitialMode(Supla::InitialMode::StartInCfgMode);
+
+    initHtml();
+
     SuplaDevice.begin();
 }
 
 
 void loop() {
     SuplaDevice.iterate();
+
+    static bool LOCAL_WEB_SERVER = false;
+    if (!LOCAL_WEB_SERVER) {
+        if (Supla::Network::IsReady()) {
+            LOCAL_WEB_SERVER = true;
+            SuplaDevice.handleAction(0, Supla::START_LOCAL_WEB_SERVER);
+        }
+    }
+
     scanner.iterate();
+
+    delay(10); // For watchdog
 }
 
 
