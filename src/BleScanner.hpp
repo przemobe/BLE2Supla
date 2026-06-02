@@ -38,7 +38,7 @@ private:
 
 
 
-    String hexifyString(std::string deviceServiceData);
+    static String hexifyString(const std::string &deviceServiceData);
 
 
 

@@ -1,16 +1,16 @@
 #include <BleScanner.hpp>
 
 
-BleScanner::BleScanner() {
+BleScanner::BleScanner():
+    pBLEScan(nullptr),
+    lastScanMillis(0),
+    scanTimeMillis(5 * 1000),
+    scanIntervalMillis(10 * 1000)
+{
     for (size_t q = 0; q < MAX_SENSORS; q++) {
         sensorsID[q].cb = nullptr;
         sensorsID[q].ID.clear();
     }
-
-    lastScanMillis = 0;
-
-    scanTimeMillis = 5 * 1000;
-    scanIntervalMillis = 10 * 1000;
 }
 
 
@@ -28,7 +28,7 @@ void BleScanner::init() {
 void BleScanner::iterate() {
     bool firstScan = true;
 
-    if ((millis() - lastScanMillis > scanIntervalMillis || firstScan) && !pBLEScan->isScanning()) {
+    if ((millis() - lastScanMillis > scanIntervalMillis || firstScan) && pBLEScan && !pBLEScan->isScanning()) {
         lastScanMillis = millis();
         firstScan = false;
 
@@ -66,7 +66,7 @@ void BleScanner::addSensor(String ID, CallbackFun_t cb) {
 }
 
 
-String BleScanner::hexifyString(std::string deviceServiceData) {
+String BleScanner::hexifyString(const std::string &deviceServiceData) {
     String hexString = "";
     for (unsigned int i = 0; i < deviceServiceData.length(); i++) {
         byte b = deviceServiceData[i];
