@@ -18,7 +18,6 @@ static const char *BTHOME_COUNTER_KEY = "counter";
 #define BTHOME_MAC_LEN      6
 #define BTHOME_COUNTER_LEN  4
 #define BTHOME_UUID_LEN     2
-const static uint16_t BTHOME_UUID = 0xfcd2;
 
 /* Stream operation macros */
 #define UINT8_TO_STREAM(p, u8)    {*(p)++ = (uint8_t)(u8);}
@@ -108,7 +107,7 @@ static uint8_t get_data_length(uint8_t object_id)
     return 0;
 }
 
-static bthome_reports_t *bthome_parse_payload(uint8_t *buffer, uint8_t len)
+static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len)
 {
     bthome_reports_t* reports = calloc(1, sizeof(bthome_reports_t));
     if (reports == NULL) {
@@ -237,7 +236,7 @@ int bthome_decrypt_payload(bthome_handle_t handle, uint8_t *data, uint8_t len, u
     return  mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, data + 3, dec_data, tag, 4);
 }
 
-static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, uint8_t *data, uint8_t len)
+static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const uint8_t *data, uint8_t len)
 {
     bthome_t *bthome = (bthome_t *)handle;
     size_t index = 2;
@@ -266,7 +265,7 @@ static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, uint8
     return NULL;
 }
 
-bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, uint8_t *adv, uint8_t len)
+bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *adv, uint8_t len)
 {
     bthome_t *bthome = (bthome_t *)handle;
     size_t index = 0;
