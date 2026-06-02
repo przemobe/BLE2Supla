@@ -83,25 +83,35 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 
     JsonObject BLEdata = doc.to<JsonObject>();
 
+#ifdef APP_DEBUG
+    const std::vector<uint8_t> &payload = advertisedDevice->getPayload();
+    printf("[BLE] payload(%u)=%s\n", payload.size(), hexifyString({(const char*)payload.data(), payload.size()}).c_str());
+#endif
+
     String mac_adress = advertisedDevice->getAddress().toString().c_str();
     mac_adress.toUpperCase();
-
 
     BLEdata["id"] = (char*)mac_adress.c_str();
     BLEdata["rssi"] = (int)advertisedDevice->getRSSI();
 
     if (advertisedDevice->haveName())
+    {
         BLEdata["name"] = (char*)advertisedDevice->getName().c_str();
+    }
 
     if (advertisedDevice->haveTXPower())
+    {
         BLEdata["txpower"] = (int8_t)advertisedDevice->getTXPower();
+    }
 
     if (advertisedDevice->haveManufacturerData())
+    {
         BLEdata["manufacturerdata"] = hexifyString(advertisedDevice->getManufacturerData()).c_str();
+    }
 
     if (advertisedDevice->haveServiceData()) {
-        int serviceDataCount = advertisedDevice->getServiceDataCount();
-        for (int j = 0; j < advertisedDevice->getServiceDataCount(); j++) {
+        const uint8_t serviceDataCount = advertisedDevice->getServiceDataCount();
+        for (uint8_t j = 0; j < serviceDataCount; j++) {
             BLEdata["servicedata"] = hexifyString(advertisedDevice->getServiceData(j)).c_str();
             BLEdata["servicedatauuid"] = advertisedDevice->getServiceDataUUID(j).toString().c_str();
         }
@@ -110,8 +120,10 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
     if (decoder.decodeBLEJson(BLEdata)) {
 
 #ifdef APP_DEBUG
-        serializeJson(BLEdata, Serial);
-        Serial.println("\n-------------------------------------------------------------------------------------------");
+        std::string serializedJson;
+        serializeJson(BLEdata, serializedJson);
+        printf("[BLE] Json=%s\n", serializedJson.c_str());
+        printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
         BLEdata.remove("manufacturerdata");
@@ -133,4 +145,13 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
             }
         }
     }
+#ifdef APP_DEBUG
+    else
+    {
+        std::string serializedJson;
+        serializeJson(BLEdata, serializedJson);
+        printf("[BLE] Json=%s\n", serializedJson.c_str());
+        printf("-------------------------------------------------------------------------------------------\n");
+    }
+#endif
 }
