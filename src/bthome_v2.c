@@ -90,10 +90,13 @@ static const object_info_t object_length[] = {
     {0x4E, 4},  /* Volume */
     {0x47, 2},  /* Volume1 */
     {0x48, 2},  /* Volume2 */
-    {0x55, 4},  /* Volume Storage */
     {0x49, 2},  /* VolumeFR */
     {0x46, 1},  /* UV */
     {0x4F, 4},  /* Water */
+    {BTHOME_SENSOR_ID_VOLUME_STORAGE,   4},
+    {BTHOME_SENSOR_ID_CONDUCTIVITY,     2},
+    {BTHOME_SENSOR_ID_TEMPERATURE_1X00, 1},
+    {BTHOME_SENSOR_ID_TEMPERATURE_0X35, 1},
 };
 
 static uint8_t get_data_length(uint8_t object_id)
@@ -177,6 +180,7 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             i = i + 1 + len;
         } else if ((buffer[i] <=  BTHOME_SENSOR_ID_MOISTURE_PRECISE)
                    || (buffer[i] >= BTHOME_SENSOR_ID_COUNT2 && buffer[i] <=  BTHOME_SENSOR_ID_WATER)
+                   || (buffer[i] >= BTHOME_SENSOR_ID_VOLUME_STORAGE && buffer[i] <=  BTHOME_SENSOR_ID_TEMPERATURE_0X35)
                    || (buffer[i] == BTHOME_SENSOR_ID_HUMIDITY) || (buffer[i] == BTHOME_SENSOR_ID_MOISTURE)) {
             int len = get_data_length(buffer[i]);
             reports->report[num_report].id = buffer[i];

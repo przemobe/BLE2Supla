@@ -27,7 +27,7 @@ typedef struct bthome_t *bthome_handle_t;
 typedef enum {
     BTHOME_SENSOR_ID_PACKET             = 0x00,
     BTHOME_SENSOR_ID_BATTERY            = 0x01,
-    BTHOME_SENSOR_ID_TEMPERATURE_PRECISE = 0x02,
+    BTHOME_SENSOR_ID_TEMPERATURE_0X01   = 0x02,
     BTHOME_SENSOR_ID_HUMIDITY_PRECISE   = 0x03,
     BTHOME_SENSOR_ID_PRESSURE           = 0x04,
     BTHOME_SENSOR_ID_ILLUMINANCE        = 0x05,
@@ -53,7 +53,7 @@ typedef enum {
     BTHOME_SENSOR_ID_DURATION           = 0x42,
     BTHOME_SENSOR_ID_CURRENT            = 0x43,
     BTHOME_SENSOR_ID_SPD                = 0x44,
-    BTHOME_SENSOR_ID_TEMPERATURE        = 0x45,
+    BTHOME_SENSOR_ID_TEMPERATURE_0X10   = 0x45,
     BTHOME_SENSOR_ID_UV                 = 0x46,
     BTHOME_SENSOR_ID_VOLUME1            = 0x47,
     BTHOME_SENSOR_ID_VOLUME2            = 0x48,
@@ -70,6 +70,9 @@ typedef enum {
     BTHOME_SENSOR_ID_TEXT               = 0x53,
     BTHOME_SENSOR_ID_RAW                = 0x54,
     BTHOME_SENSOR_ID_VOLUME_STORAGE     = 0x55,
+    BTHOME_SENSOR_ID_CONDUCTIVITY       = 0x56,
+    BTHOME_SENSOR_ID_TEMPERATURE_1X00   = 0x57,
+    BTHOME_SENSOR_ID_TEMPERATURE_0X35   = 0x58,
 } __attribute__((packed)) bthome_sensor_id_t;
 
 /**
