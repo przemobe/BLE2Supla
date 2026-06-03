@@ -204,29 +204,43 @@ bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &p
         {
             case BTHOME_SENSOR_ID_TEMPERATURE_0X01:
             {
-                printf("[BTHOME] val=%f\n", *((int16_t*)report.data) * 0.01d);
+                printf("[BTHOME] tempc=%f\n", *((int16_t*)report.data) * 0.01d);
                 BLEdata["tempc"] = *((int16_t*)report.data) * 0.01d;
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X10:
             {
-                printf("[BTHOME] val=%f\n", *((int16_t*)report.data) * 0.1d);
+                printf("[BTHOME] tempc=%f\n", *((int16_t*)report.data) * 0.1d);
                 BLEdata["tempc"] = *((int16_t*)report.data) * 0.1d;
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_1X00:
             {
-                printf("[BTHOME] val=%f\n", *((int8_t*)report.data) * 1.0d);
+                printf("[BTHOME] tempc=%f\n", *((int8_t*)report.data) * 1.0d);
                 BLEdata["tempc"] = *((int8_t*)report.data) * 1.0d;
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X35:
             {
-                printf("[BTHOME] val=%f\n", *((int8_t*)report.data) * 0.35d);
+                printf("[BTHOME] tempc=%f\n", *((int8_t*)report.data) * 0.35d);
                 BLEdata["tempc"] = *((int8_t*)report.data) * 0.35d;
+                break;
+            }
+
+            case BTHOME_SENSOR_ID_HUMIDITY_0X01:
+            {
+                printf("[BTHOME] hum=%f\n", *((uint16_t*)report.data) * 0.01d);
+                BLEdata["hum"] = *((uint16_t*)report.data) * 0.01d;
+                break;
+            }
+
+            case BTHOME_SENSOR_ID_HUMIDITY_1x00:
+            {
+                printf("[BTHOME] hum=%f\n", *((uint8_t*)report.data) * 1.0d);
+                BLEdata["hum"] = *((uint8_t*)report.data) * 1.0d;
                 break;
             }
 
