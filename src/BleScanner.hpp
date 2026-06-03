@@ -7,6 +7,7 @@
 
 #include <NimBLEDevice.h>
 #include <decoder.h>
+#include "bthome_v2.h"
 
 #include "MAC.hpp"
 #include "config.hpp"
@@ -29,6 +30,7 @@ public:
 private:
     constexpr static const char* TAG = "BleScanner";
     constexpr static const size_t MAX_SENSORS = MAX_SENSORS_COUNT;
+    static const NimBLEUUID NIM_BLEUUID_BTHOME;
 
     struct Callback_t {
         CallbackFun_t cb;
@@ -39,6 +41,7 @@ private:
 
 
     static String hexifyString(const std::string &deviceServiceData);
+    bool decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &payload);
 
 
 
@@ -46,6 +49,7 @@ private:
     JsonDocument doc;
 
     NimBLEScan* pBLEScan;
+    bthome_handle_t pBtHomeHandle;
     unsigned long lastScanMillis;
 
     unsigned long scanTimeMillis;
