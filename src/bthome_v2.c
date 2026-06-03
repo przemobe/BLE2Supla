@@ -181,8 +181,13 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
         } else if ((buffer[i] <=  BTHOME_SENSOR_ID_MOISTURE_PRECISE)
                    || (buffer[i] >= BTHOME_SENSOR_ID_COUNT2 && buffer[i] <=  BTHOME_SENSOR_ID_WATER)
                    || (buffer[i] >= BTHOME_SENSOR_ID_VOLUME_STORAGE && buffer[i] <=  BTHOME_SENSOR_ID_TEMPERATURE_0X35)
-                   || (buffer[i] == BTHOME_SENSOR_ID_HUMIDITY) || (buffer[i] == BTHOME_SENSOR_ID_MOISTURE)) {
+                   || (buffer[i] == BTHOME_SENSOR_ID_HUMIDITY_1x00) || (buffer[i] == BTHOME_SENSOR_ID_MOISTURE)) {
             int len = get_data_length(buffer[i]);
+            if (0 == len)
+            {
+                bthome_free_reports(reports);
+                return NULL;
+            }
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = len;
             reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
@@ -221,7 +226,7 @@ void bthome_free_reports(bthome_reports_t *reports)
     free(reports);
 }
 
-int bthome_decrypt_payload(bthome_handle_t handle, uint8_t *data, uint8_t len, uint8_t *dec_data, uint8_t *dec_data_len)
+int bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, uint8_t len, uint8_t *dec_data, uint8_t *dec_data_len)
 {
     bthome_t *bthome = (bthome_t *)handle;
     uint8_t nonce[BTHOME_NONCE_LEN];
@@ -286,7 +291,7 @@ bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *a
         }
 
         uint8_t type = adv[index + 1];
-        uint8_t *data = &adv[index + 2];
+        const uint8_t *data = &adv[index + 2];
         size_t data_length = length - 1;
         if (type == 0x16) {
             uint16_t uuid = (data[1] << 8) | data[0];
