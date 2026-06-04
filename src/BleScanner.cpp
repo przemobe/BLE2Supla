@@ -26,7 +26,7 @@ void BleScanner::init() {
 
 
 void BleScanner::iterate() {
-    bool firstScan = true;
+    static bool firstScan = true;
 
     if ((millis() - lastScanMillis > scanIntervalMillis || firstScan) && !pBLEScan->isScanning()) {
         lastScanMillis = millis();
