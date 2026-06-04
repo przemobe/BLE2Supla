@@ -177,7 +177,7 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             memcpy(reports->report[num_report].data, buffer + i + 2, len);
             reports->num_reports = ++num_report;
             ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], len);
-            i = i + 1 + len;
+            i = i + 2 + len;
         } else if ((buffer[i] <=  BTHOME_SENSOR_ID_MOISTURE_PRECISE)
                    || (buffer[i] >= BTHOME_SENSOR_ID_COUNT2 && buffer[i] <=  BTHOME_SENSOR_ID_WATER)
                    || (buffer[i] >= BTHOME_SENSOR_ID_VOLUME_STORAGE && buffer[i] <=  BTHOME_SENSOR_ID_TEMPERATURE_0X35)

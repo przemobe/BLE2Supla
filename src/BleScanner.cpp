@@ -247,7 +247,7 @@ bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &p
             case BTHOME_BIN_SENSOR_ID_OPENING:
             case BTHOME_BIN_SENSOR_ID_BATTERY ... BTHOME_BIN_SENSOR_ID_WINDOW:
             {
-                BLEdata["open"] = (bool)(*(uint8_t*)report.data);
+                BLEdata["open"] = (bool)(0x01 & *(uint8_t*)report.data);
                 break;
             }
 
