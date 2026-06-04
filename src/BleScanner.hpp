@@ -24,6 +24,7 @@ public:
 
     void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
     void addSensor(String MAC, CallbackFun_t cb);
+    void callSensors(const String &ID, JsonObject &BLEdata);
 
     void setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis);
 

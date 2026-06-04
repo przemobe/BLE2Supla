@@ -70,6 +70,24 @@ void BleScanner::addSensor(String ID, CallbackFun_t cb) {
 }
 
 
+void BleScanner::callSensors(const String &ID, JsonObject &BLEdata)
+{
+    for (size_t q = 0; q < MAX_SENSORS; q++)
+    {
+        if (sensorsID[q].ID.length() == 0)
+            continue;
+
+        if (MAC::compare(ID, sensorsID[q].ID))
+        {
+            if (sensorsID[q].cb != nullptr)
+            {
+                sensorsID[q].cb(sensorsID[q].ID, BLEdata);
+            }
+        }
+    }
+}
+
+
 String BleScanner::hexifyString(const std::string &deviceServiceData) {
     String hexString = "";
     for (unsigned int i = 0; i < deviceServiceData.length(); i++) {
@@ -129,15 +147,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
-        for (size_t q = 0; q < MAX_SENSORS; q++) {
-            if (sensorsID[q].ID.length() == 0)
-                continue;
-            if (MAC::compare(mac_adress, sensorsID[q].ID)) {
-                if (sensorsID[q].cb != nullptr) {
-                    sensorsID[q].cb(sensorsID[q].ID, BLEdata);
-                }
-            }
-        }
+        callSensors(mac_adress, BLEdata);
     }
     else if (decoder.decodeBLEJson(BLEdata))
     {
@@ -157,15 +167,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata.remove("cont");
         BLEdata.remove("track");
 
-        for (size_t q = 0; q < MAX_SENSORS; q++) {
-            if (sensorsID[q].ID.length() == 0)
-                continue;
-            if (MAC::compare(mac_adress, sensorsID[q].ID)) {
-                if (sensorsID[q].cb != nullptr) {
-                    sensorsID[q].cb(sensorsID[q].ID, BLEdata);
-                }
-            }
-        }
+        callSensors(mac_adress, BLEdata);
     }
 #ifdef APP_DEBUG
     else
