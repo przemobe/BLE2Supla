@@ -4,7 +4,7 @@
 
 class MAC {
 public:
-    static bool isValid(String mac, bool allowWildcard = true) {
+    static bool isValid(const String &mac, bool allowWildcard = true) {
         if (mac.length() != 17)
             return false; // długość MAC musi wynosić 17
 
@@ -13,10 +13,10 @@ public:
 
         for (int i = 0; i < mac.length(); i++) {
             if ((i + 1) % 3 == 0) {
-                if (mac.charAt(i) != ':')
+                if (mac[i] != ':')
                     return false;
             } else {
-                char c = mac.charAt(i);
+                char c = mac[i];
                 if (!isHexCharacter(c) && c != '?')
                     return false;
             }
@@ -24,7 +24,7 @@ public:
         return true;
     }
 
-    static bool compare(String mac, String pattern) {
+    static bool compare(const String &mac, const String &pattern) {
         if (mac.length() != pattern.length())
             return false;
 
@@ -42,6 +42,6 @@ public:
 
 
 private:
-    static bool hasWildcard(String mac) { return mac.indexOf('?') != -1; }
-    static bool isHexCharacter(char c) { return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'); }
+    static bool inline hasWildcard(const String &mac) { return mac.indexOf('?') != -1; }
+    static bool inline isHexCharacter(char c) { return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'); }
 };
