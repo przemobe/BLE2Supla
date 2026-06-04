@@ -4,6 +4,8 @@ This software turns an ESP32 into a BLE sensor-to-Supla gateway. The project use
 \
 It is possible to operate the device: [https://decoder.theengs.io/devices/devices.html](https://decoder.theengs.io/devices/devices.html)
 
+Theengs Decoder library does not plan to support the [BTHome](https://bthome.io/) format (https://github.com/theengs/decoder/issues/249) therefore additional BTHome format decoder from [Espressif IoT Solution](https://github.com/espressif/esp-iot-solution/tree/5e0b39c48ed7f88acd9df1d85979930459f71463/components/bluetooth/ble_adv/bthome) is used.
+
 
 ## Supported Supla Devices
 
