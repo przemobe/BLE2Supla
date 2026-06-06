@@ -166,39 +166,39 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             reports->num_reports = ++num_report;
             i = i + 3;
         } else if (buffer[i] == BTHOME_SENSOR_ID_RAW || buffer[i] == BTHOME_SENSOR_ID_TEXT) {
-            int len = buffer[i + 1];
+            int data_len = buffer[i + 1];
             reports->report[num_report].id = buffer[i];
-            reports->report[num_report].len = len;
+            reports->report[num_report].len = data_len;
             reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
             if (reports->report[num_report].data == NULL) {
                 bthome_free_reports(reports);
                 return NULL;
             }
-            memcpy(reports->report[num_report].data, buffer + i + 2, len);
+            memcpy(reports->report[num_report].data, buffer + i + 2, data_len);
             reports->num_reports = ++num_report;
-            ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], len);
-            i = i + 2 + len;
+            ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], data_len);
+            i = i + 2 + data_len;
         } else if ((buffer[i] <=  BTHOME_SENSOR_ID_MOISTURE_PRECISE)
                    || (buffer[i] >= BTHOME_SENSOR_ID_COUNT2 && buffer[i] <=  BTHOME_SENSOR_ID_WATER)
                    || (buffer[i] >= BTHOME_SENSOR_ID_VOLUME_STORAGE && buffer[i] <=  BTHOME_SENSOR_ID_TEMPERATURE_0X35)
                    || (buffer[i] == BTHOME_SENSOR_ID_HUMIDITY_1x00) || (buffer[i] == BTHOME_SENSOR_ID_MOISTURE)) {
-            int len = get_data_length(buffer[i]);
-            if (0 == len)
+            int data_len = get_data_length(buffer[i]);
+            if (0 == data_len)
             {
                 bthome_free_reports(reports);
                 return NULL;
             }
             reports->report[num_report].id = buffer[i];
-            reports->report[num_report].len = len;
+            reports->report[num_report].len = data_len;
             reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
             if (reports->report[num_report].data == NULL) {
                 bthome_free_reports(reports);
                 return NULL;
             }
-            memcpy(reports->report[num_report].data, buffer + i + 1, len);
-            ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], len);
+            memcpy(reports->report[num_report].data, buffer + i + 1, data_len);
+            ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], data_len);
             reports->num_reports = ++num_report;
-            i = i + 1 + len;
+            i = i + 1 + data_len;
         } else {
             ESP_LOGW(TAG, "met unknown id 0x%x", buffer[i]);
             bthome_free_reports(reports);
