@@ -112,11 +112,21 @@ static uint8_t get_data_length(uint8_t object_id)
 
 static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len)
 {
+    if (BTHOME_PAYLOAD_LEN_MAX < len)
+    {
+        ESP_LOGE(TAG, "payload length=%u exceeds buffer size=%u", len, BTHOME_PAYLOAD_LEN_MAX);
+        return NULL;
+    }
+
     bthome_reports_t* reports = calloc(1, sizeof(bthome_reports_t));
     if (reports == NULL) {
         ESP_LOGE(TAG, "calloc bthome_reports_t failed");
         return NULL;
     }
+
+    memcpy(reports->payload, buffer, len);
+    buffer = reports->payload;
+
     uint16_t num_report = 0;
     int i = 0;
     while (i + 1 < len) {
@@ -132,24 +142,14 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             ESP_LOGD(TAG, "bin_sensor id %d val %d\n", buffer[i], buffer[i + 1]);
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = 1;
-            reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
-            if (reports->report[num_report].data == NULL) {
-                bthome_free_reports(reports);
-                return NULL;
-            }
-            reports->report[num_report].data[0] = buffer[i + 1];
+            reports->report[num_report].data = buffer + i + 1;
             reports->num_reports = ++num_report;
             i = i + 2;
         } else if (buffer[i] == BTHOME_EVENT_ID_BUTTON) {
             ESP_LOGD(TAG, "event id %d val %d\n", buffer[i], buffer[i + 1]);
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = 1;
-            reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
-            if (reports->report[num_report].data == NULL) {
-                bthome_free_reports(reports);
-                return NULL;
-            }
-            reports->report[num_report].data[0] = buffer[i + 1];
+            reports->report[num_report].data = buffer + i + 1;
             reports->num_reports = ++num_report;
             i = i + 2;
         } else if (buffer[i] == BTHOME_EVENT_ID_DIMMER) {
@@ -162,13 +162,7 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             ESP_LOGD(TAG, "event id %d val %d\n", buffer[i], buffer[i + 1]);
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = 2;
-            reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
-            if (reports->report[num_report].data == NULL) {
-                bthome_free_reports(reports);
-                return NULL;
-            }
-            reports->report[num_report].data[0] = buffer[i + 1];
-            reports->report[num_report].data[1] = buffer[i + 2];
+            reports->report[num_report].data = buffer + i + 1;
             reports->num_reports = ++num_report;
             i = i + 3;
         } else if (buffer[i] == BTHOME_SENSOR_ID_RAW || buffer[i] == BTHOME_SENSOR_ID_TEXT) {
@@ -181,12 +175,7 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             }
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = data_len;
-            reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
-            if (reports->report[num_report].data == NULL) {
-                bthome_free_reports(reports);
-                return NULL;
-            }
-            memcpy(reports->report[num_report].data, buffer + i + 2, data_len);
+            reports->report[num_report].data = buffer + i + 2;
             reports->num_reports = ++num_report;
             ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], data_len);
             i = i + 2 + data_len;
@@ -208,12 +197,7 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
             }
             reports->report[num_report].id = buffer[i];
             reports->report[num_report].len = data_len;
-            reports->report[num_report].data = calloc(1, sizeof(uint8_t) * reports->report[num_report].len);
-            if (reports->report[num_report].data == NULL) {
-                bthome_free_reports(reports);
-                return NULL;
-            }
-            memcpy(reports->report[num_report].data, buffer + i + 1, data_len);
+            reports->report[num_report].data = buffer + i + 1;
             ESP_LOGD(TAG, "sensor id %d len %d\n", buffer[i], data_len);
             reports->num_reports = ++num_report;
             i = i + 1 + data_len;
@@ -226,21 +210,13 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
     if (reports->num_reports == 0) {
         bthome_free_reports(reports);
         return NULL;
-    } else {
-        return reports;
     }
+
+    return reports;
 }
 
 void bthome_free_reports(bthome_reports_t *reports)
 {
-    if (reports == NULL) {
-        return;
-    }
-    for (int i = 0; i < reports->num_reports; i++) {
-        if (reports->report[i].data != NULL) {
-            free(reports->report[i].data);
-        }
-    }
     free(reports);
 }
 
@@ -280,7 +256,7 @@ static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const
         return bthome_parse_payload(data + 3, len - 3);
     } else {
         uint8_t payload_len = 0;
-        uint8_t payload_dec[31];
+        uint8_t payload_dec[BTHOME_PAYLOAD_LEN_MAX];
         if (bthome_decrypt_payload(bthome, data, len, payload_dec, &payload_len) == 0) {
             ESP_LOG_BUFFER_HEX_LEVEL("payload_dec", payload_dec, payload_len, ESP_LOG_DEBUG);
             return bthome_parse_payload(payload_dec, payload_len);

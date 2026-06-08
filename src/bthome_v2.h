@@ -117,7 +117,8 @@ typedef enum {
     BTHOME_EVENT_ID_DIMMER    = 0x3C,
 } __attribute__((packed)) bthome_event_id_t;
 
-#define BTHOME_REPORTS_MAX 10
+#define BTHOME_REPORTS_MAX (10)
+#define BTHOME_PAYLOAD_LEN_MAX (31)
 
 /**
  * @brief BTHome device info
@@ -148,6 +149,7 @@ typedef struct {
 typedef struct {
     uint8_t num_reports; /**< Number of reports in the array */
     bthome_report_t report[BTHOME_REPORTS_MAX]; /**< Array of reports */
+    uint8_t payload[BTHOME_PAYLOAD_LEN_MAX]; /**< Decrypted payload data buffer */
 } bthome_reports_t;
 
 /**

@@ -198,12 +198,13 @@ bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &p
 
     for (uint8_t rptIdx = 0; rptIdx < num_reports; rptIdx++)
     {
-        bthome_report_t &report = ptReports->report[rptIdx];
+        const bthome_report_t &report = ptReports->report[rptIdx];
 #ifdef APP_DEBUG
         printf("[BTHOME] rptIdx=%u/%u id=0x%02x len=%u data=%s\n", rptIdx+1, num_reports, report.id, report.len,
             hexifyString({(const char*)report.data, report.len}).c_str());
 #endif
 
+        // BTHome data is LE, assume system is also LE so conversion can be skipped.
         switch (report.id)
         {
             case BTHOME_SENSOR_ID_TEMPERATURE_0X01:
