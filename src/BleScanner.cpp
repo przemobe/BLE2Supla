@@ -194,8 +194,13 @@ bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &p
     }
 
     bthome_reports_t *ptReports = bthome_parse_adv_data(pBtHomeHandle, payload.data(), payload.size());
-    const uint8_t num_reports = (ptReports ? std::min(ptReports->num_reports, (uint8_t)BTHOME_REPORTS_MAX) : 0);
+    if (nullptr == ptReports)
+    {
+        ESP_LOGE(TAG, "[BTHOME] Fail to decode!\n");
+        return false;
+    }
 
+    const uint8_t num_reports = std::min(ptReports->num_reports, (uint8_t)BTHOME_REPORTS_MAX);
     for (uint8_t rptIdx = 0; rptIdx < num_reports; rptIdx++)
     {
         const bthome_report_t &report = ptReports->report[rptIdx];
@@ -207,6 +212,12 @@ bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &p
         // BTHome data is LE, assume system is also LE so conversion can be skipped.
         switch (report.id)
         {
+            case BTHOME_SENSOR_ID_BATTERY:
+            {
+                BLEdata["batt"] = *((uint8_t*)report.data) * 1.0d;
+                break;
+            }
+
             case BTHOME_SENSOR_ID_TEMPERATURE_0X01:
             {
                 BLEdata["tempc"] = *((int16_t*)report.data) * 0.01d;
