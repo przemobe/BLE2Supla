@@ -50,6 +50,7 @@ typedef struct bthome_t {
  * This table maps object IDs to their corresponding data lengths
  */
 static const object_info_t object_length[] = {
+    {BTHOME_SENSOR_ID_PACKET,           1},
     {0x51, 2},  /* Acceleration */
     {0x01, 1},  /* Battery */
     {0x12, 2},  /* CO2 */
@@ -110,7 +111,7 @@ static uint8_t get_data_length(uint8_t object_id)
     return 0;
 }
 
-static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len)
+static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer_in, uint8_t len)
 {
     if (BTHOME_PAYLOAD_LEN_MAX < len)
     {
@@ -124,8 +125,8 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer, uint8_t len
         return NULL;
     }
 
-    memcpy(reports->payload, buffer, len);
-    buffer = reports->payload;
+    memcpy(reports->payload, buffer_in, len);
+    uint8_t *buffer = reports->payload;
 
     uint16_t num_report = 0;
     int i = 0;
