@@ -1,4 +1,8 @@
 #include <main.hpp>
+#include <HTTPUpdateServer.h>
+
+
+HTTPUpdateServer httpUpdater;
 
 
 void setup() {
@@ -26,6 +30,7 @@ void setup() {
     SuplaDevice.setInitialMode(Supla::InitialMode::StartInCfgMode);
 
     initHtml();
+    httpUpdater.setup(suplaServer.getServerPtr(), "/update");
 
     SuplaDevice.begin();
 }
