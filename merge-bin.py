@@ -49,7 +49,7 @@ def merge_bin(source, target, env):
         env.Exit(1)
 
     os.makedirs("dist", exist_ok=True)
-    shutil.copyfile(output_bin, "dist/BLE2SUPLA"+ver+"_"+env["PIOENV"]+".bin")
+    shutil.copyfile(output_bin, "dist/BLE2SUPLA_"+ver+"_"+env["PIOENV"]+".bin")
 
 # Wywołaj po wygenerowaniu firmware.bin
 env.AddPostAction("$BUILD_DIR/firmware.bin", merge_bin)
