@@ -300,7 +300,7 @@ bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *a
     return NULL;
 }
 
-uint8_t bthome_payload_add_sensor_data(uint8_t *buffer, uint8_t offset, bthome_sensor_id_t obj_id, uint8_t *data, uint8_t data_len)
+uint8_t bthome_payload_add_sensor_data(uint8_t *buffer, uint8_t offset, bthome_sensor_id_t obj_id, const uint8_t *data, uint8_t data_len)
 {
     uint8_t* header = buffer + offset;
     UINT8_TO_STREAM(header, obj_id);
@@ -316,7 +316,7 @@ uint8_t bthome_payload_adv_add_bin_sensor_data(uint8_t *buffer, uint8_t offset, 
     return (offset + 2);
 }
 
-uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_event_id_t obj_id, uint8_t *evt, uint8_t evt_size)
+uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_event_id_t obj_id, const uint8_t *evt, uint8_t evt_size)
 {
     uint8_t* header = buffer + offset;
     UINT8_TO_STREAM(header, obj_id);
@@ -370,7 +370,7 @@ static esp_err_t bthome_encrypt_payload(bthome_handle_t handle, const uint16_t *
     return ESP_OK;
 }
 
-uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, uint8_t *name, uint8_t name_len, bthome_device_info_t info, uint8_t *payload, uint8_t payload_len)
+uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char *name, uint8_t name_len, bthome_device_info_t info, uint8_t *payload, uint8_t payload_len)
 {
     bthome_t *bthome = (bthome_t *)handle;
     uint8_t adv_len = 0;

@@ -261,7 +261,7 @@ void bthome_free_reports(bthome_reports_t *reports);
  * @param data_len length of the data
  * @return length of the data added to the buffer
  */
-uint8_t bthome_payload_add_sensor_data(uint8_t *buffer, uint8_t offset, bthome_sensor_id_t obj_id, uint8_t *data, uint8_t data_len);
+uint8_t bthome_payload_add_sensor_data(uint8_t *buffer, uint8_t offset, bthome_sensor_id_t obj_id, const uint8_t *data, uint8_t data_len);
 
 /**
  * @brief Add binary sensor data to the payload
@@ -284,7 +284,7 @@ uint8_t bthome_payload_adv_add_bin_sensor_data(uint8_t *buffer, uint8_t offset, 
  * @param evt event value
  * @return length of the data added to the buffer
  */
-uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_event_id_t obj_id, uint8_t *evt, uint8_t evt_size);
+uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_event_id_t obj_id, const uint8_t *evt, uint8_t evt_size);
 
 /**
  * @brief Parse the advertisement data
@@ -310,7 +310,7 @@ bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *a
  * @param payload_len length of the payload
  * @return length of the advertisement data
  */
-uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, uint8_t *name, uint8_t name_len, bthome_device_info_t info, uint8_t *payload, uint8_t payload_len);
+uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char *name, uint8_t name_len, bthome_device_info_t info, uint8_t *payload, uint8_t payload_len);
 
 #ifdef __cplusplus
 }
