@@ -181,6 +181,18 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 }
 
 
+template <typename ValueT>
+void addResultValue(JsonObject BLEdata, std::string key, ValueT value)
+{
+    while (BLEdata[key].is<ValueT>())
+    {
+        key.insert(0, 1, '_');
+    }
+
+    BLEdata[key] = value;
+}
+
+
 bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &payload)
 {
     if (nullptr == pBtHomeHandle)
@@ -214,43 +226,43 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &pa
         {
             case BTHOME_SENSOR_ID_BATTERY:
             {
-                BLEdata["batt"] = *((uint8_t*)report.data) * 1.0d;
+                addResultValue(BLEdata, "batt", *((uint8_t*)report.data) * 1.0d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X01:
             {
-                BLEdata["tempc"] = *((int16_t*)report.data) * 0.01d;
+                addResultValue(BLEdata, "tempc", *((int16_t*)report.data) * 0.01d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X10:
             {
-                BLEdata["tempc"] = *((int16_t*)report.data) * 0.1d;
+                addResultValue(BLEdata, "tempc", *((int16_t*)report.data) * 0.1d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_1X00:
             {
-                BLEdata["tempc"] = *((int8_t*)report.data) * 1.0d;
+                addResultValue(BLEdata, "tempc", *((int8_t*)report.data) * 1.0d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X35:
             {
-                BLEdata["tempc"] = *((int8_t*)report.data) * 0.35d;
+                addResultValue(BLEdata, "tempc", *((int8_t*)report.data) * 0.35d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_HUMIDITY_0X01:
             {
-                BLEdata["hum"] = *((uint16_t*)report.data) * 0.01d;
+                addResultValue(BLEdata, "hum", *((uint16_t*)report.data) * 0.01d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_HUMIDITY_1x00:
             {
-                BLEdata["hum"] = *((uint8_t*)report.data) * 1.0d;
+                addResultValue(BLEdata, "hum", *((uint8_t*)report.data) * 1.0d);
                 break;
             }
 
@@ -259,7 +271,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &pa
             case BTHOME_BIN_SENSOR_ID_OPENING:
             case BTHOME_BIN_SENSOR_ID_BATTERY ... BTHOME_BIN_SENSOR_ID_WINDOW:
             {
-                BLEdata["open"] = (bool)(0x01 & *(uint8_t*)report.data);
+                addResultValue(BLEdata, "open", (bool)(0x01 & *(uint8_t*)report.data));
                 break;
             }
 
