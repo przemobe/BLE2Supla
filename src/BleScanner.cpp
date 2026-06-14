@@ -70,7 +70,7 @@ void BleScanner::addSensor(String ID, CallbackFun_t cb) {
 }
 
 
-void BleScanner::callSensors(const String &ID, JsonObject &BLEdata)
+void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
 {
     for (size_t q = 0; q < MAX_SENSORS; q++)
     {
@@ -181,7 +181,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 }
 
 
-bool BleScanner::decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &payload)
+bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &payload)
 {
     if (nullptr == pBtHomeHandle)
     {

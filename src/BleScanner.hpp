@@ -24,7 +24,7 @@ public:
 
     void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
     void addSensor(String MAC, CallbackFun_t cb);
-    void callSensors(const String &ID, JsonObject &BLEdata);
+    void callSensors(const String &ID, JsonObject BLEdata);
 
     void setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis);
 
@@ -42,7 +42,7 @@ private:
 
 
     static String hexifyString(const std::string &deviceServiceData);
-    bool decodeBtHome(JsonObject &BLEdata, const std::vector<uint8_t> &payload);
+    bool decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &payload);
 
 
 
