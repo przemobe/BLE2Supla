@@ -414,7 +414,10 @@ uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char
         ARRAY_TO_STREAM(buffer, tag, 4);
         adv_len += 4;
         bthome->counter++;
-        bthome->callbacks.store(handle, BTHOME_COUNTER_KEY, (const uint8_t *)&bthome->counter, sizeof(bthome->counter));
+        if (bthome->callbacks.store)
+        {
+            bthome->callbacks.store(handle, BTHOME_COUNTER_KEY, (const uint8_t *)&bthome->counter, sizeof(bthome->counter));
+        }
         return adv_len;
     }
 }
@@ -462,6 +465,7 @@ esp_err_t bthome_load_params(bthome_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "handle is null");
     bthome_t *bthome = (bthome_t *)handle;
+    ESP_RETURN_ON_FALSE(bthome->callbacks.load, ESP_ERR_INVALID_ARG, TAG, "load function is null");
     uint8_t counter[4];
     bthome->callbacks.load(handle, BTHOME_COUNTER_KEY, counter, sizeof(counter));
     memcpy(&bthome->counter, counter, sizeof(bthome->counter));
