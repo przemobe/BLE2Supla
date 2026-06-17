@@ -11,12 +11,12 @@
 
 class BLE_T_Sensor : public BLE_Sensor, public Supla::Sensor::Thermometer {
 public:
-    BLE_T_Sensor(String mac, BleScanner* scanner, uint32_t validTimeMs)
-        : BLE_Sensor(BLE_Sensor::Type::Thermo, mac, scanner, validTimeMs, &channel)
+    BLE_T_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
+        : BLE_Sensor(mac, scanner, validTimeMs, &channel)
         , temp(TEMPERATURE_NOT_AVAILABLE) { }
 
 private:
-    virtual void onData(String MAC, JsonObject data) {
+    virtual void onData(const String &MAC, JsonObject data) {
         if (data["tempc"].is<double>())
             temp = data["tempc"].as<double>();
         else

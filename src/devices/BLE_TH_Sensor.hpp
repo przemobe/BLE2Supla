@@ -12,14 +12,14 @@
 
 class BLE_TH_Sensor : public BLE_Sensor, public Supla::Sensor::ThermHygroMeter {
 public:
-    BLE_TH_Sensor(String mac, BleScanner* scanner, uint32_t validTimeMs)
-        : BLE_Sensor(BLE_Sensor::Type::TermoAndHum, mac, scanner, validTimeMs, &channel)
+    BLE_TH_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
+        : BLE_Sensor(mac, scanner, validTimeMs, &channel)
         , temp(TEMPERATURE_NOT_AVAILABLE)
         , humi(HUMIDITY_NOT_AVAILABLE) { }
 
 
 private:
-    virtual void onData(String MAC, JsonObject data) {
+    virtual void onData(const String &MAC, JsonObject data) {
         if (data["tempc"].is<double>())
             temp = data["tempc"].as<double>();
         else

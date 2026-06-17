@@ -22,9 +22,8 @@ public:
     };
 
 
-    BLE_Sensor(Type type, String mac, BleScanner* scanner, uint32_t validTimeMs, Supla::Channel* suplaChannel)
-        : type(type)
-        , validTimeMs(validTimeMs)
+    BLE_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs, Supla::Channel* suplaChannel)
+        : validTimeMs(validTimeMs)
         , lastReceiveTime(0)
         , suplaChannel(suplaChannel) {
 
@@ -77,10 +76,9 @@ protected:
 
     virtual void onInvalidTime() = 0;
 
-    virtual void onData(String MAC, JsonObject data) = 0;
+    virtual void onData(const String &MAC, JsonObject data) = 0;
 
 private:
-    Type type;
     uint32_t validTimeMs;
     uint32_t lastReceiveTime;
     Supla::Channel* suplaChannel;
