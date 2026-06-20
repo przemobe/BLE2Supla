@@ -18,9 +18,18 @@ public:
 private:
     virtual void onData(const String &MAC, JsonObject data) {
         if (data["tempc"].is<double>())
+        {
             temp = data["tempc"].as<double>();
+            data.remove("tempc");
+        }
+        else if (data["_tempc"].is<double>())
+        {
+            temp = data["_tempc"].as<double>();
+        }
         else
+        {
             temp = TEMPERATURE_NOT_AVAILABLE;
+        }
 
 
         printf("T SENSOR '%s' -> %0.1f°C\n", MAC.c_str(), temp);

@@ -21,9 +21,18 @@ private:
     virtual void onData(const String &MAC, JsonObject data) {
 
         if (data["hum"].is<double>())
+        {
             humi = data["hum"].as<double>();
+            data.remove("hum");
+        }
+        else if (data["_hum"].is<double>())
+        {
+            humi = data["_hum"].as<double>();
+        }
         else
+        {
             humi = HUMIDITY_NOT_AVAILABLE;
+        }
 
         printf("TH SENSOR '%s' -> %0.0f%%\n", MAC.c_str(), humi);
 
