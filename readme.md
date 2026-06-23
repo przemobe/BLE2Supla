@@ -20,7 +20,7 @@ There are two target chips, ESP32-C3 and ESP32-S3 and two modes Normal and Debug
 
 ### Web Installer
 
-1. Download the file from the /dist directory.
+1. Download the *.bin file from the [Releases > Assets](https://github.com/przemobe/BLE2Supla/releases).
 2. Open https://espressif.github.io/esptool-js/
 3. Connect to the ESP32 chip.
 4. Select the downloaded file.
