@@ -431,7 +431,7 @@ esp_err_t bthome_set_encrypt_key(bthome_handle_t handle, const uint8_t *key)
     return  mbedtls_ccm_setkey(&bthome->aes_ctx, MBEDTLS_CIPHER_ID_AES, key, 128);
 }
 
-esp_err_t bthome_set_local_mac_addr(bthome_handle_t handle, uint8_t *mac)
+esp_err_t bthome_set_local_mac_addr(bthome_handle_t handle, const uint8_t *mac)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "handle is null");
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "mac is null");

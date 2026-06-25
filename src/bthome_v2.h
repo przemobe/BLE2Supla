@@ -210,7 +210,7 @@ esp_err_t bthome_set_encrypt_key(bthome_handle_t handle, const uint8_t *key);
  *      ESP_OK: success
  *      others: fail
  */
-esp_err_t bthome_set_local_mac_addr(bthome_handle_t handle, uint8_t *mac);
+esp_err_t bthome_set_local_mac_addr(bthome_handle_t handle, const uint8_t *mac);
 
 /**
  * @brief set the peer mac address used for decryption
