@@ -50,6 +50,7 @@ def merge_bin(source, target, env):
 
     os.makedirs("dist", exist_ok=True)
     shutil.copyfile(output_bin, "dist/BLE2SUPLA_"+ver+"_"+env["PIOENV"]+".bin")
+    shutil.copyfile(build_dir / "firmware.bin", "dist/BLE2SUPLA_"+ver+"_"+env["PIOENV"]+"_OTA.bin")
 
 # Wywołaj po wygenerowaniu firmware.bin
 env.AddPostAction("$BUILD_DIR/firmware.bin", merge_bin)

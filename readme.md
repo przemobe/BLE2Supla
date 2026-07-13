@@ -16,7 +16,7 @@ Theengs Decoder library does not plan to support the [BTHome](https://bthome.io/
 
 
 ## Installation
-There are two target chips, ESP32-C3 and ESP32-S3 and two modes Normal and Debug(filename ending -DBG). Debug version is logging all data received from BLE, this will be useful to identify and add new devices 
+There are two target chips, ESP32-C3 and ESP32-S3 and two modes Normal and Debug(filename ending -DBG). Debug version is logging all data received from BLE, this will be useful to identify and add new devices.
 
 ### Web Installer
 
@@ -27,6 +27,14 @@ There are two target chips, ESP32-C3 and ESP32-S3 and two modes Normal and Debug
 5. Set the Flash Address to 0x0000.
 6. Click Program.
 ![Flashing Screen](https://github.com/TheMechanos/BLE2Supla/blob/main/img/Flashing.png?raw=true)
+
+
+### Manual Over The Air (OTA) Updates
+1. Download the *_OTA.bin file from the [Releases > Assets](https://github.com/przemobe/BLE2Supla/releases).
+2. Open http://[your_device_ip]/update
+3. In "Firmware" section open *_OTA.bin file
+4. Click "Update Firmware" button.
+
 ### PlatformIO
 
 1. Clone the project: `git clone https://github.com/TheMechanos/BLE2Supla.git`
