@@ -14,10 +14,14 @@ static const char *TAG = "bthome";
 static const char *BTHOME_COUNTER_KEY = "counter";
 
 /* BTHome constants */
-#define BTHOME_NONCE_LEN    13
-#define BTHOME_MAC_LEN      6
-#define BTHOME_COUNTER_LEN  4
-#define BTHOME_UUID_LEN     2
+#define BTHOME_NONCE_LEN        (13)
+#define BTHOME_MAC_LEN          (6)
+#define BTHOME_COUNTER_LEN      (4)
+#define BTHOME_UUID_LEN         (2)
+#define BTHOME_DEVICE_INFO_LEN  (1)
+#define BTHOME_MIC_LEN          (4)
+
+#define BTHOME_ENCDATA_HDRTAIL_LEN  (BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN + BTHOME_COUNTER_LEN + BTHOME_MIC_LEN)
 
 /* Stream operation macros */
 #define UINT8_TO_STREAM(p, u8)    {*(p)++ = (uint8_t)(u8);}
@@ -36,12 +40,12 @@ typedef struct {
  * @brief BTHome object structure
  */
 typedef struct bthome_t {
-    uint8_t key[16];                /* Encryption key */
-    uint8_t local_mac[6];           /* Local MAC address */
-    uint8_t peer_mac[6];            /* Peer MAC address */
-    uint32_t counter;               /* Counter for encryption */
-    bthome_callbacks_t callbacks;  /* Callback functions */
-    mbedtls_ccm_context aes_ctx;    /* AES context for encryption */
+    uint8_t key[16];                    /* Encryption key */
+    uint8_t local_mac[BTHOME_MAC_LEN];  /* Local MAC address */
+    uint8_t peer_mac[BTHOME_MAC_LEN];   /* Peer MAC address */
+    uint32_t counter;                   /* Counter for encryption */
+    bthome_callbacks_t callbacks;       /* Callback functions */
+    mbedtls_ccm_context aes_ctx;        /* AES context for encryption */
 } bthome_t;
 
 /**
@@ -185,14 +189,15 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer_in, uint8_t 
                    || (buffer[i] >= BTHOME_SENSOR_ID_VOLUME_STORAGE && buffer[i] <=  BTHOME_SENSOR_ID_TEMPERATURE_0X35)
                    || (buffer[i] == BTHOME_SENSOR_ID_HUMIDITY_1x00) || (buffer[i] == BTHOME_SENSOR_ID_MOISTURE)) {
             int data_len = get_data_length(buffer[i]);
-            if (i + data_len >= len)
+            if (0 == data_len)
             {
-                ESP_LOGE(TAG, "buffer range check fail");
+                ESP_LOGE(TAG, "incorrect data length definition");
                 bthome_free_reports(reports);
                 return NULL;
             }
-            if (0 == data_len)
+            if (i + data_len >= len)
             {
+                ESP_LOGE(TAG, "buffer range check fail");
                 bthome_free_reports(reports);
                 return NULL;
             }
@@ -221,48 +226,82 @@ void bthome_free_reports(bthome_reports_t *reports)
     free(reports);
 }
 
-int bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, uint8_t len, uint8_t *dec_data, uint8_t *dec_data_len)
+esp_err_t bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, const uint8_t data_len, uint8_t *dec_data, uint8_t *dec_data_len)
 {
     bthome_t *bthome = (bthome_t *)handle;
+
+    if (BTHOME_ENCDATA_HDRTAIL_LEN >= data_len)
+    {
+        ESP_LOGE(TAG, "Encrypted data length %u too short", data_len);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if ((data_len - BTHOME_ENCDATA_HDRTAIL_LEN) > *dec_data_len)
+    {
+        ESP_LOGE(TAG, "Output buffer too small %u < %u", *dec_data_len, (data_len - BTHOME_ENCDATA_HDRTAIL_LEN));
+        return ESP_ERR_INVALID_SIZE;
+    }
+
     uint8_t nonce[BTHOME_NONCE_LEN];
     uint8_t *nonce_p = nonce;
-    memcpy(nonce_p, bthome->peer_mac, BTHOME_MAC_LEN);  //mac
+    memcpy(nonce_p, bthome->peer_mac, BTHOME_MAC_LEN);
     nonce_p += BTHOME_MAC_LEN;
-    memcpy(nonce_p, data, BTHOME_UUID_LEN); //uuid
+    memcpy(nonce_p, data, BTHOME_UUID_LEN);
     nonce_p += BTHOME_UUID_LEN;
-    memcpy(nonce_p, data + 2, 1); //device data type
-    nonce_p += 1;
-    memcpy(nonce_p, &data[len - 8], BTHOME_COUNTER_LEN);
+    memcpy(nonce_p, data + 2, BTHOME_DEVICE_INFO_LEN);
+    nonce_p += BTHOME_DEVICE_INFO_LEN;
+    memcpy(nonce_p, &data[data_len - 8], BTHOME_COUNTER_LEN);
     nonce_p += BTHOME_COUNTER_LEN;
-    *dec_data_len = len - 11;
-    uint8_t tag[4];
-    memcpy(tag, data + len - 4, 4);
-    return  mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, data + 3, dec_data, tag, 4);
+
+    uint8_t mic[BTHOME_MIC_LEN];
+    memcpy(mic, data + data_len - 4, BTHOME_MIC_LEN);
+
+    *dec_data_len = data_len - BTHOME_ENCDATA_HDRTAIL_LEN;
+    int ret = mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, data + 3, dec_data, mic, BTHOME_MIC_LEN);
+    if (0 != ret)
+    {
+        ESP_LOGE(TAG, "mbedtls_ccm_auth_decrypt failed, ret %d", ret);
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
 }
 
 static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const uint8_t *data, uint8_t len)
 {
     bthome_t *bthome = (bthome_t *)handle;
-    size_t index = 2;
     bthome_device_info_t info;
-    info.all = data[index];
+
+    if (3 >= len)
+    {
+        ESP_LOGE(TAG, "service data length %u too short", len);
+        return NULL;
+    }
+
+    info.all = data[2];
 
     ESP_LOGD(TAG, "device_info: %x\n", info.all);
     ESP_LOGD(TAG, "version: %d\n", info.bit.bthome_version);
     ESP_LOGD(TAG, "encryption_flag: %d\n", info.bit.encryption_flag);
     ESP_LOGD(TAG, "trigger_based_flag:  %d\n", info.bit.trigger_based_flag);
 
-    if (!info.bit.encryption_flag) {
+    if (!info.bit.encryption_flag)
+    {
         ESP_LOG_BUFFER_HEX_LEVEL("raw payload", data + 3, len - 3, ESP_LOG_DEBUG);
         return bthome_parse_payload(data + 3, len - 3);
-    } else {
-        uint8_t payload_len = 0;
+    }
+    else
+    {
+        uint8_t payload_len = BTHOME_PAYLOAD_LEN_MAX;
         uint8_t payload_dec[BTHOME_PAYLOAD_LEN_MAX];
-        if (bthome_decrypt_payload(bthome, data, len, payload_dec, &payload_len) == 0) {
+        if (ESP_OK == bthome_decrypt_payload(bthome, data, len, payload_dec, &payload_len))
+        {
             ESP_LOG_BUFFER_HEX_LEVEL("payload_dec", payload_dec, payload_len, ESP_LOG_DEBUG);
             return bthome_parse_payload(payload_dec, payload_len);
-        } else {
-            ESP_LOGE(TAG, "decrypt failed\n");
+        }
+        else
+        {
+            ESP_LOGE(TAG, "decrypt failed!");
             return NULL;
         }
     }
@@ -324,46 +363,53 @@ uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_
     return (offset + evt_size + 1);
 }
 
-static esp_err_t bthome_encrypt_payload(bthome_handle_t handle, const uint16_t *uuid, uint8_t *device_info, uint8_t *raw_data, uint8_t data_len, uint8_t *enc_data, uint8_t *tag)
+static esp_err_t bthome_encrypt_payload(bthome_handle_t handle, const uint16_t *uuid, uint8_t *device_info, uint8_t *raw_data, uint8_t data_len, uint8_t *enc_data, uint8_t *mic)
 {
     bthome_t *bthome = (bthome_t *)handle;
+
     uint8_t nonce[BTHOME_NONCE_LEN];
     uint8_t *nonce_p = nonce;
     memcpy(nonce_p, bthome->local_mac, BTHOME_MAC_LEN);
     nonce_p += BTHOME_MAC_LEN;
     memcpy(nonce_p, uuid, BTHOME_UUID_LEN);
     nonce_p += BTHOME_UUID_LEN;
-    memcpy(nonce_p, device_info, 1);
-    nonce_p += 1;
+    memcpy(nonce_p, device_info, BTHOME_DEVICE_INFO_LEN);
+    nonce_p += BTHOME_DEVICE_INFO_LEN;
     memcpy(nonce_p, &bthome->counter, BTHOME_COUNTER_LEN);
     nonce_p += BTHOME_COUNTER_LEN;
-    int ret = mbedtls_ccm_encrypt_and_tag(&bthome->aes_ctx, data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, raw_data, enc_data, tag, 4);
-    if (ret != 0) {
+
+    int ret = mbedtls_ccm_encrypt_and_tag(&bthome->aes_ctx, data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, raw_data, enc_data, mic, BTHOME_MIC_LEN);
+    if (0 != ret)
+    {
         ESP_LOGE(TAG, "mbedtls_ccm_encrypt_and_tag failed, ret %d", ret);
         return ESP_FAIL;
     }
 
     ESP_LOGD(TAG, "raw_data:");
-    for (int i = 0; i < data_len; i++) {
+    for (int i = 0; i < data_len; i++)
+    {
         ESP_LOGD(TAG, " %x", raw_data[i]);
     }
     ESP_LOGD(TAG, "\n");
 
     ESP_LOGD(TAG, "nonce:");
-    for (int i = 0; i < BTHOME_NONCE_LEN; i++) {
+    for (int i = 0; i < BTHOME_NONCE_LEN; i++)
+    {
         ESP_LOGD(TAG, " %x", nonce[i]);
     }
     ESP_LOGD(TAG, "\n");
 
     ESP_LOGD(TAG, "ret %d\n", ret);
     ESP_LOGD(TAG, "enc:");
-    for (int i = 0; i < data_len; i++) {
+    for (int i = 0; i < data_len; i++)
+    {
         ESP_LOGD(TAG, " %x", enc_data[i]);
     }
 
-    ESP_LOGD(TAG, "tag:");
-    for (int i = 0; i < 4; i++) {
-        ESP_LOGD(TAG, " %x", tag[i]);
+    ESP_LOGD(TAG, "mic:");
+    for (int i = 0; i < BTHOME_MIC_LEN; i++)
+    {
+        ESP_LOGD(TAG, " %x", mic[i]);
     }
     ESP_LOGD(TAG, "\n");
 
@@ -374,45 +420,52 @@ uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char
 {
     bthome_t *bthome = (bthome_t *)handle;
     uint8_t adv_len = 0;
-    uint8_t flag_data[] = {0x02, 0x01, 0x06};
-    uint8_t bthome_uuid[2];
-    bthome_uuid[0] = (uint8_t)(BTHOME_UUID);
-    bthome_uuid[1] = (uint8_t)(BTHOME_UUID >> 8);
+    static const uint8_t flag_data[] = {0x02, 0x01, 0x06};
+    static const uint8_t bthome_uuid[BTHOME_UUID_LEN] = {(uint8_t)(BTHOME_UUID), (uint8_t)(BTHOME_UUID >> 8)};
+
     ARRAY_TO_STREAM(buffer, flag_data, sizeof(flag_data));
     adv_len += sizeof(flag_data);
 
-    if (name_len != 0) {
+    if (name_len != 0)
+    {
         UINT8_TO_STREAM(buffer, name_len + 1);
         UINT8_TO_STREAM(buffer, 0x09);
         ARRAY_TO_STREAM(buffer, name, name_len);
         adv_len += (name_len + 2);
     }
 
-    if (info.bit.encryption_flag) {
+    if (info.bit.encryption_flag)
+    {
         UINT8_TO_STREAM(buffer, payload_len + 12);
-    }  else {
+    }
+    else
+    {
         UINT8_TO_STREAM(buffer, payload_len + 4);
     }
 
     UINT8_TO_STREAM(buffer, 0X16);
     ARRAY_TO_STREAM(buffer, bthome_uuid, sizeof(bthome_uuid));
     UINT8_TO_STREAM(buffer, info.all);
-    if (!info.bit.encryption_flag) {
+
+    if (!info.bit.encryption_flag)
+    {
         ARRAY_TO_STREAM(buffer, payload, payload_len);
         adv_len += (payload_len + 5);
         return adv_len;
-    } else {
+    }
+    else
+    {
         uint8_t payload_enc[20];
-        uint8_t tag[4];
-        uint8_t counter[4];
-        memcpy(counter, &bthome->counter, 4);
-        bthome_encrypt_payload(handle, &BTHOME_UUID, &info.all, payload, payload_len, payload_enc, tag);
+        uint8_t mic[BTHOME_MIC_LEN];
+        uint8_t counter[BTHOME_COUNTER_LEN];
+        memcpy(counter, &bthome->counter, BTHOME_COUNTER_LEN);
+        bthome_encrypt_payload(handle, &BTHOME_UUID, &info.all, payload, payload_len, payload_enc, mic);
         ARRAY_TO_STREAM(buffer, payload_enc, payload_len);
         adv_len += (payload_len + 5);
-        ARRAY_TO_STREAM(buffer, counter, 4);
-        adv_len += 4;
-        ARRAY_TO_STREAM(buffer, tag, 4);
-        adv_len += 4;
+        ARRAY_TO_STREAM(buffer, counter, BTHOME_COUNTER_LEN);
+        adv_len += BTHOME_COUNTER_LEN;
+        ARRAY_TO_STREAM(buffer, mic, BTHOME_MIC_LEN);
+        adv_len += BTHOME_MIC_LEN;
         bthome->counter++;
         if (bthome->callbacks.store)
         {
@@ -436,7 +489,7 @@ esp_err_t bthome_set_local_mac_addr(bthome_handle_t handle, const uint8_t *mac)
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "handle is null");
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "mac is null");
     bthome_t* bthome = (bthome_t *)handle;
-    memcpy(bthome->local_mac, mac, 6);
+    memcpy(bthome->local_mac, mac, BTHOME_MAC_LEN);
     return ESP_OK;
 }
 
@@ -445,7 +498,7 @@ esp_err_t bthome_set_peer_mac_addr(bthome_handle_t handle, const uint8_t *mac)
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "handle is null");
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "mac is null");
     bthome_t* bthome = (bthome_t *)handle;
-    memcpy(bthome->peer_mac, mac, 6);
+    memcpy(bthome->peer_mac, mac, BTHOME_MAC_LEN);
     return ESP_OK;
 }
 
@@ -466,7 +519,7 @@ esp_err_t bthome_load_params(bthome_handle_t handle)
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "handle is null");
     bthome_t *bthome = (bthome_t *)handle;
     ESP_RETURN_ON_FALSE(bthome->callbacks.load, ESP_ERR_INVALID_ARG, TAG, "load function is null");
-    uint8_t counter[4];
+    uint8_t counter[BTHOME_COUNTER_LEN];
     bthome->callbacks.load(handle, BTHOME_COUNTER_KEY, counter, sizeof(counter));
     memcpy(&bthome->counter, counter, sizeof(bthome->counter));
     ESP_LOGD(TAG, "load counter %lu\n", bthome->counter);
