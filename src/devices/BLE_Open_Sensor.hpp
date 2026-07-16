@@ -10,7 +10,7 @@
 #include "BLE_Sensor.hpp"
 
 
-class BLE_Open_Sensor : public BLE_Sensor, public Supla::Sensor::BinaryBase {
+class BLE_Open_Sensor : public Supla::Sensor::BinaryBase, public BLE_Sensor {
 public:
     BLE_Open_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
         : BLE_Sensor(mac, scanner, validTimeMs, &channel)

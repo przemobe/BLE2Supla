@@ -10,7 +10,7 @@
 #include "BLE_Sensor.hpp"
 
 
-class BLE_TH_Sensor : public BLE_Sensor, public Supla::Sensor::ThermHygroMeter {
+class BLE_TH_Sensor : public Supla::Sensor::ThermHygroMeter, public BLE_Sensor {
 public:
     BLE_TH_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
         : BLE_Sensor(mac, scanner, validTimeMs, &channel)
