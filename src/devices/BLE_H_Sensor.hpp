@@ -10,7 +10,7 @@
 #include "BLE_Sensor.hpp"
 
 
-class BLE_H_Sensor : public BLE_Sensor, public Supla::Sensor::HygroMeter {
+class BLE_H_Sensor : public Supla::Sensor::HygroMeter, public BLE_Sensor {
 public:
     BLE_H_Sensor(String mac, BleScanner* scanner, uint32_t validTimeMs)
         : BLE_Sensor(BLE_Sensor::Type::Humidity, mac, scanner, validTimeMs, &channel)
