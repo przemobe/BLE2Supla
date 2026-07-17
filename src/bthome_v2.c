@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Przemyslaw Bereski
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +22,8 @@ static const char *BTHOME_COUNTER_KEY = "counter";
 #define BTHOME_DEVICE_INFO_LEN  (1)
 #define BTHOME_MIC_LEN          (4)
 
-#define BTHOME_ENCDATA_HDRTAIL_LEN  (BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN + BTHOME_COUNTER_LEN + BTHOME_MIC_LEN)
+#define BTHOME_ENCDATA_HDRTAIL_LEN          (BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN + BTHOME_COUNTER_LEN + BTHOME_MIC_LEN)
+#define BTHOME_ENCDATA_CIPHERTEXT_LEN_MAX   (BTHOME_PAYLOAD_LEN_MAX - BTHOME_ENCDATA_HDRTAIL_LEN)
 
 /* Stream operation macros */
 #define UINT8_TO_STREAM(p, u8)    {*(p)++ = (uint8_t)(u8);}
@@ -124,7 +126,8 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer_in, uint8_t 
     }
 
     bthome_reports_t* reports = calloc(1, sizeof(bthome_reports_t));
-    if (reports == NULL) {
+    if (NULL == reports)
+    {
         ESP_LOGE(TAG, "calloc bthome_reports_t failed");
         return NULL;
     }
@@ -134,8 +137,8 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer_in, uint8_t 
 
     uint16_t num_report = 0;
     int i = 0;
-    while (i + 1 < len) {
-
+    while (len > i + 1)
+    {
         if (reports->num_reports >= BTHOME_REPORTS_MAX) {
             ESP_LOGE(TAG, "bthome_reports_t overflow");
             bthome_free_reports(reports);
@@ -213,7 +216,9 @@ static bthome_reports_t *bthome_parse_payload(const uint8_t *buffer_in, uint8_t 
             return NULL;
         }
     }
-    if (reports->num_reports == 0) {
+
+    if (0 == reports->num_reports)
+    {
         bthome_free_reports(reports);
         return NULL;
     }
@@ -290,22 +295,17 @@ static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const
         ESP_LOG_BUFFER_HEX_LEVEL("raw payload", data + 3, len - 3, ESP_LOG_DEBUG);
         return bthome_parse_payload(data + 3, len - 3);
     }
-    else
+
+    uint8_t payload_len = BTHOME_PAYLOAD_LEN_MAX;
+    uint8_t payload_dec[BTHOME_PAYLOAD_LEN_MAX];
+    if (ESP_OK != bthome_decrypt_payload(bthome, data, len, payload_dec, &payload_len))
     {
-        uint8_t payload_len = BTHOME_PAYLOAD_LEN_MAX;
-        uint8_t payload_dec[BTHOME_PAYLOAD_LEN_MAX];
-        if (ESP_OK == bthome_decrypt_payload(bthome, data, len, payload_dec, &payload_len))
-        {
-            ESP_LOG_BUFFER_HEX_LEVEL("payload_dec", payload_dec, payload_len, ESP_LOG_DEBUG);
-            return bthome_parse_payload(payload_dec, payload_len);
-        }
-        else
-        {
-            ESP_LOGE(TAG, "decrypt failed!");
-            return NULL;
-        }
+        ESP_LOGE(TAG, "bthome_decrypt_payload failed!");
+        return NULL;
     }
-    return NULL;
+
+    ESP_LOG_BUFFER_HEX_LEVEL("payload_dec", payload_dec, payload_len, ESP_LOG_DEBUG);
+    return bthome_parse_payload(payload_dec, payload_len);
 }
 
 bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *adv, uint8_t len)
@@ -418,7 +418,8 @@ static esp_err_t bthome_encrypt_payload(bthome_handle_t handle, const uint16_t *
 
 uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char *name, uint8_t name_len, bthome_device_info_t info, uint8_t *payload, uint8_t payload_len)
 {
-    bthome_t *bthome = (bthome_t *)handle;
+    ESP_RETURN_ON_FALSE(buffer, 0, TAG, "buffer is null");
+
     uint8_t adv_len = 0;
     static const uint8_t flag_data[] = {0x02, 0x01, 0x06};
     static const uint8_t bthome_uuid[BTHOME_UUID_LEN] = {(uint8_t)(BTHOME_UUID), (uint8_t)(BTHOME_UUID >> 8)};
@@ -426,7 +427,7 @@ uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char
     ARRAY_TO_STREAM(buffer, flag_data, sizeof(flag_data));
     adv_len += sizeof(flag_data);
 
-    if (name_len != 0)
+    if (name && name_len)
     {
         UINT8_TO_STREAM(buffer, name_len + 1);
         UINT8_TO_STREAM(buffer, 0x09);
@@ -453,26 +454,36 @@ uint8_t bthome_make_adv_data(bthome_handle_t handle, uint8_t *buffer, const char
         adv_len += (payload_len + 5);
         return adv_len;
     }
-    else
+
+    ESP_RETURN_ON_FALSE(handle, 0, TAG, "handle is null");
+    ESP_RETURN_ON_FALSE(BTHOME_ENCDATA_CIPHERTEXT_LEN_MAX >= payload_len, 0, TAG, "payload is too long");
+
+    bthome_t *bthome = (bthome_t *)handle;
+    uint8_t ciphertext[BTHOME_ENCDATA_CIPHERTEXT_LEN_MAX];
+    uint8_t mic[BTHOME_MIC_LEN];
+    uint8_t counter[BTHOME_COUNTER_LEN];
+
+    memcpy(counter, &bthome->counter, BTHOME_COUNTER_LEN);
+    if (ESP_OK != bthome_encrypt_payload(handle, &BTHOME_UUID, &info.all, payload, payload_len, ciphertext, mic))
     {
-        uint8_t payload_enc[20];
-        uint8_t mic[BTHOME_MIC_LEN];
-        uint8_t counter[BTHOME_COUNTER_LEN];
-        memcpy(counter, &bthome->counter, BTHOME_COUNTER_LEN);
-        bthome_encrypt_payload(handle, &BTHOME_UUID, &info.all, payload, payload_len, payload_enc, mic);
-        ARRAY_TO_STREAM(buffer, payload_enc, payload_len);
-        adv_len += (payload_len + 5);
-        ARRAY_TO_STREAM(buffer, counter, BTHOME_COUNTER_LEN);
-        adv_len += BTHOME_COUNTER_LEN;
-        ARRAY_TO_STREAM(buffer, mic, BTHOME_MIC_LEN);
-        adv_len += BTHOME_MIC_LEN;
-        bthome->counter++;
-        if (bthome->callbacks.store)
-        {
-            bthome->callbacks.store(handle, BTHOME_COUNTER_KEY, (const uint8_t *)&bthome->counter, sizeof(bthome->counter));
-        }
-        return adv_len;
+        ESP_LOGE(TAG, "bthome_encrypt_payload failed!");
+        return 0;
     }
+
+    ARRAY_TO_STREAM(buffer, ciphertext, payload_len);
+    adv_len += (payload_len + 5);
+    ARRAY_TO_STREAM(buffer, counter, BTHOME_COUNTER_LEN);
+    adv_len += BTHOME_COUNTER_LEN;
+    ARRAY_TO_STREAM(buffer, mic, BTHOME_MIC_LEN);
+    adv_len += BTHOME_MIC_LEN;
+    bthome->counter++;
+
+    if (bthome->callbacks.store)
+    {
+        bthome->callbacks.store(handle, BTHOME_COUNTER_KEY, (const uint8_t *)&bthome->counter, sizeof(bthome->counter));
+    }
+
+    return adv_len;
 }
 
 esp_err_t bthome_set_encrypt_key(bthome_handle_t handle, const uint8_t *key)

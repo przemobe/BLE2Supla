@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Przemyslaw Bereski
  *
  * SPDX-License-Identifier: Apache-2.0
  */
