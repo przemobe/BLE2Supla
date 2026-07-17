@@ -42,7 +42,7 @@ private:
 
 
     static String hexifyString(const std::string &deviceServiceData);
-    bool decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &payload);
+    bool decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice);
 
 
 

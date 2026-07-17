@@ -138,7 +138,9 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata["servicedatauuid"] = advertisedDevice->getServiceDataUUID(j).toString().c_str();
     }
 
-    if (serviceDataCount && (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_BTHOME) && decodeBtHome(BLEdata, payload))
+    if (serviceDataCount &&
+        (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_BTHOME) &&
+        decodeBtHome(BLEdata, *advertisedDevice))
     {
 #ifdef APP_DEBUG
         std::string serializedJson;
@@ -193,11 +195,12 @@ void addResultValue(JsonObject BLEdata, std::string key, ValueT value)
 }
 
 
-bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &payload)
+bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice)
 {
+    esp_err_t ret = ESP_OK;
     if (nullptr == pBtHomeHandle)
     {
-        esp_err_t ret = bthome_create(&pBtHomeHandle);
+        ret = bthome_create(&pBtHomeHandle);
         if (ESP_OK != ret)
         {
             ESP_LOGE(TAG, "[BTHOME] bthome_create ERROR=%u\n", ret);
@@ -205,10 +208,28 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const std::vector<uint8_t> &pa
         }
     }
 
+    NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
+    peerMacAddr.reverseByteOrder();
+    ret = bthome_set_peer_mac_addr(pBtHomeHandle, peerMacAddr.getVal());
+    if (ESP_OK != ret)
+    {
+        ESP_LOGE(TAG, "[BTHOME] bthome_set_peer_mac_addr ERROR=%u\n", ret);
+        return false;
+    }
+
+    uint8_t peerKey[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // TODO: get peer key.
+    ret = bthome_set_encrypt_key(pBtHomeHandle, peerKey);
+    if (ESP_OK != ret)
+    {
+        ESP_LOGE(TAG, "[BTHOME] bthome_set_encrypt_key ERROR=%u\n", ret);
+        return false;
+    }
+
+    const std::vector<uint8_t> &payload = advertisedDevice.getPayload();
     bthome_reports_t *ptReports = bthome_parse_adv_data(pBtHomeHandle, payload.data(), payload.size());
     if (nullptr == ptReports)
     {
-        ESP_LOGE(TAG, "[BTHOME] Fail to decode!\n");
+        ESP_LOGE(TAG, "[BTHOME] bthome_parse_adv_data fail\n");
         return false;
     }
 
