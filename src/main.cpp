@@ -60,6 +60,7 @@ void initHtml() {
     new Supla::Html::WifiParameters;
     new Supla::Html::ProtocolParameters;
     new Supla::Html::StatusLedParameters;
+    new Supla::Html::DivEnd;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
 

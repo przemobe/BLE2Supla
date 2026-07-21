@@ -16,6 +16,7 @@
 #include <supla/network/html/button_config_parameters.h>
 #include <supla/network/html/custom_parameter.h>
 #include <supla/network/html/device_info.h>
+#include <supla/network/html/div.h>
 #include <supla/network/html/protocol_parameters.h>
 #include <supla/network/html/select_input_parameter.h>
 #include <supla/network/html/status_led_parameters.h>

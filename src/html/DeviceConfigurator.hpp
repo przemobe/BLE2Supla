@@ -78,8 +78,6 @@ namespace Html {
             if (!cfg)
                 return;
 
-            sender->send("</div>"); // END BOX PREVIOUS
-
             sender->send("<div class=\"box\">");
             sender->send("<h3>BLE Settings</h3>");
 
@@ -211,9 +209,6 @@ namespace Html {
 
                 sender->send("</div>"); // BOX
             }
-
-            // sender->send("<div class=\"box\">");
-
         } // sender
 
 
