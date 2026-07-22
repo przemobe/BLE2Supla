@@ -1,8 +1,10 @@
 #include <main.hpp>
 #include <HTTPUpdateServer.h>
+#include <html/BleRadar.hpp>
 
 
 HTTPUpdateServer httpUpdater;
+BleRadar* pBleRadar = nullptr;
 
 
 void setup() {
@@ -63,6 +65,7 @@ void initHtml() {
     new Supla::Html::DivEnd;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
+    pBleRadar = new BleRadar();
 
     auto setScannerParams = []() {
         printf("BLE Scanning params: %u / %u [s]\n", bleCfg->getScanTime(), bleCfg->getScanInterval());
