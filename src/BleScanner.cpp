@@ -3,7 +3,7 @@
 
 
 const NimBLEUUID BleScanner::NIM_BLEUUID_BTHOME(BTHOME_UUID);
-extern BleRadar* pBleRadar;
+extern BleRadarResults bleRadarResults;
 
 
 BleScanner::BleScanner():
@@ -150,11 +150,8 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("[BLE] Json=%s\n", serializedJson.c_str());
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
-        if (pBleRadar)
-        {
-            pBleRadar->addResult(BLEdata);
-        }
 
+        bleRadarResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
     else if (decoder.decodeBLEJson(BLEdata))
@@ -175,11 +172,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata.remove("cont");
         BLEdata.remove("track");
 
-        if (pBleRadar)
-        {
-            pBleRadar->addResult(BLEdata);
-        }
-
+        bleRadarResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
     else
@@ -191,10 +184,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
-        if (pBleRadar)
-        {
-            pBleRadar->addResult(BLEdata);
-        }
+        bleRadarResults.addResult(BLEdata);
     }
 }
 

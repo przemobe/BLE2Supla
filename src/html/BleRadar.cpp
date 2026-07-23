@@ -1,7 +1,7 @@
 #include <html/BleRadar.hpp>
 
 
-void BleRadar::addResult(JsonObject data)
+void BleRadarResults::addResult(JsonObject data)
 {
     if (not data["id"].is<const char*>())
     {
@@ -36,14 +36,18 @@ void BleRadar::addResult(JsonObject data)
     _entries.push_front(newEntry);
 }
 
-void BleRadar::send(Supla::WebSender *sender)
+/*
+ * https://forum.supla.org/viewtopic.php?t=18368
+ * https://supla.github.io/supla-device/classSupla_1_1WebSender.html
+ */
+void BleRadarResults::send(Supla::WebSender *sender)
 {
     if (!sender)
     {
         return;
     }
 
-    sender->send("<div class=\"box\"><h3>Wykryte urządzenia</h3><table><tbody><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Szczegóły</th></tr></thead>");
+    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><tbody><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Szczegoly</th></tr></thead>");
     std::lock_guard<std::mutex> lck(_entries_mtx);
     for (const Entry &entry : _entries)
     {
@@ -52,10 +56,20 @@ void BleRadar::send(Supla::WebSender *sender)
         sender->send("</td><td>");
         sender->send(entry.rssi);
         sender->send("</td><td>");
-        sender->send(entry.name.c_str());
+        sender->sendSafe(entry.name.c_str());
         sender->send("</td><td>");
         sender->send(entry.info.c_str());
         sender->send("</td></tr>");
     }
     sender->send("</tbody></table></div>");
+}
+
+BleRadarHtml::BleRadarHtml(BleRadarResults &rBleRadarResults):
+    _rBleRadarResults(rBleRadarResults)
+{
+}
+
+void BleRadarHtml::send(Supla::WebSender *sender)
+{
+    _rBleRadarResults.send(sender);
 }

@@ -4,7 +4,7 @@
 
 
 HTTPUpdateServer httpUpdater;
-BleRadar* pBleRadar = nullptr;
+BleRadarResults bleRadarResults;
 
 
 void setup() {
@@ -65,7 +65,7 @@ void initHtml() {
     new Supla::Html::DivEnd;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
-    pBleRadar = new BleRadar();
+    new BleRadarHtml(bleRadarResults);
 
     auto setScannerParams = []() {
         printf("BLE Scanning params: %u / %u [s]\n", bleCfg->getScanTime(), bleCfg->getScanInterval());
