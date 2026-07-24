@@ -1,4 +1,5 @@
 #include <html/BleRadar.hpp>
+#include <cstring>
 
 
 void BleRadarResults::addResult(JsonObject data)
@@ -10,11 +11,11 @@ void BleRadarResults::addResult(JsonObject data)
 
     Entry newEntry = {};
 
-    newEntry.id = data["id"].as<const char*>();
+    strncpy(newEntry.id, data["id"].as<const char*>(), sizeof(newEntry.id) - 1);
 
     if (data["name"].is<const char*>())
     {
-        newEntry.name = data["name"].as<const char*>();
+        strncpy(newEntry.name, data["name"].as<const char*>(), sizeof(newEntry.name) - 1);
     }
 
     if (data["rssi"].is<int>())
@@ -22,8 +23,42 @@ void BleRadarResults::addResult(JsonObject data)
         newEntry.rssi = data["rssi"].as<int>();
     }
 
+    char *infoPtr = newEntry.info;
+    if (data["tempc"].is<double>())
+    {
+        *infoPtr++ = 'T';
+    }
+
+    if (data["_tempc"].is<double>())
+    {
+        *infoPtr++ = 'T';
+    }
+
+    if (data["hum"].is<double>())
+    {
+        *infoPtr++ = 'H';
+    }
+
+    if (data["_hum"].is<double>())
+    {
+        *infoPtr++ = 'H';
+    }
+
+    if (data["open"].is<bool>())
+    {
+        *infoPtr++ = 'O';
+    }
+
+    if (data["batt"].is<double>())
+    {
+        *infoPtr++ = 'B';
+    }
+
     std::lock_guard<std::mutex> lck(_entries_mtx);
-    const auto it = std::find_if(_entries.begin(), _entries.end(), [&newEntry](const Entry &entry){ return entry.id == newEntry.id; });
+    const auto it = std::find_if(_entries.begin(), _entries.end(), [&newEntry](const Entry &entry)
+        {
+            return (0 == strncmp(entry.id, newEntry.id, sizeof(entry.id)));
+        });
     if (_entries.end() != it)
     {
         _entries.erase(it);
@@ -47,16 +82,16 @@ void BleRadarResults::send(Supla::WebSender *sender)
         return;
     }
 
-    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Szczegoly</th></tr></thead><tbody>");
+    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Czujniki</th></tr></thead><tbody>");
     std::lock_guard<std::mutex> lck(_entries_mtx);
     for (const Entry &entry : _entries)
     {
         sender->tag("tr").body([&]()
         {
-            sender->tag("td").body(entry.id.c_str());
+            sender->tag("td").body(entry.id);
             sender->tag("td").body([&]() { sender->send(entry.rssi); });
-            sender->tag("td").body([&]() { sender->sendSafe(entry.name.c_str()); });
-            sender->tag("td").body([&]() { sender->sendSafe(entry.info.c_str()); });
+            sender->tag("td").body([&]() { sender->sendSafe(entry.name); });
+            sender->tag("td").body([&]() { sender->sendSafe(entry.info); });
         });
     }
     sender->send("</tbody></table></div>");

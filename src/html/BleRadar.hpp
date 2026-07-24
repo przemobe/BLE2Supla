@@ -18,10 +18,10 @@ public:
 protected:
     struct Entry
     {
-        std::string id;
-        std::string name;
         int rssi;
-        std::string info;
+        char id[18];
+        char name[18];
+        char info[8];
     };
 
     typedef std::deque<Entry> Entries;
