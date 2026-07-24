@@ -47,19 +47,17 @@ void BleRadarResults::send(Supla::WebSender *sender)
         return;
     }
 
-    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><tbody><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Szczegoly</th></tr></thead>");
+    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Szczegoly</th></tr></thead><tbody>");
     std::lock_guard<std::mutex> lck(_entries_mtx);
     for (const Entry &entry : _entries)
     {
-        sender->send("<tr><td>");
-        sender->send(entry.id.c_str());
-        sender->send("</td><td>");
-        sender->send(entry.rssi);
-        sender->send("</td><td>");
-        sender->sendSafe(entry.name.c_str());
-        sender->send("</td><td>");
-        sender->send(entry.info.c_str());
-        sender->send("</td></tr>");
+        sender->tag("tr").body([&]()
+        {
+            sender->tag("td").body(entry.id.c_str());
+            sender->tag("td").body([&]() { sender->send(entry.rssi); });
+            sender->tag("td").body([&]() { sender->sendSafe(entry.name.c_str()); });
+            sender->tag("td").body([&]() { sender->sendSafe(entry.info.c_str()); });
+        });
     }
     sender->send("</tbody></table></div>");
 }
