@@ -71,10 +71,58 @@ void BleRadarResults::addResult(JsonObject data)
     _entries.push_front(newEntry);
 }
 
-/*
- * https://forum.supla.org/viewtopic.php?t=18368
- * https://supla.github.io/supla-device/classSupla_1_1WebSender.html
- */
+void snprintfSafeHtmlStr(char *out, size_t outSize, const char *in)
+{
+    if (0 == outSize)
+    {
+        return;
+    }
+
+    outSize--;
+    for (; *in && outSize; in++)
+    {
+        switch (*in)
+        {
+            case '\'':
+                strncpy(out, "&apos;", outSize);
+                outSize += 6;
+                out += 6;
+                break;
+
+            case '"':
+                strncpy(out, "&quot;", outSize);
+                outSize += 6;
+                out += 6;
+                break;
+
+            case '<':
+                strncpy(out, "&lt;", outSize);
+                outSize += 4;
+                out += 4;
+                break;
+
+            case '>':
+                strncpy(out, "&gt;", outSize);
+                outSize += 4;
+                out += 4;
+                break;
+
+            case '&':
+                strncpy(out, "&amp;", outSize);
+                outSize += 5;
+                out += 5;
+                break;
+
+            default:
+                *out = *in;
+                out++;
+                outSize--;
+        }
+    }
+
+    *out = '\0';
+}
+
 void BleRadarResults::send(Supla::WebSender *sender)
 {
     if (!sender)
@@ -82,19 +130,28 @@ void BleRadarResults::send(Supla::WebSender *sender)
         return;
     }
 
-    sender->send("<div class=\"box\"><h3>Wykryte urzadzenia</h3><table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Czujniki</th></tr></thead><tbody>");
+    char safeName[128];
+    char toSend[256];
+
+    sender->send(
+        "<div class=\"box\">"
+            "<h3>Wykryte urzadzenia</h3>"
+            "<table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Czujniki</th></tr></thead>"
+                "<tbody>");
+
     std::lock_guard<std::mutex> lck(_entries_mtx);
     for (const Entry &entry : _entries)
     {
-        sender->tag("tr").body([&]()
-        {
-            sender->tag("td").body(entry.id);
-            sender->tag("td").body([&]() { sender->send(entry.rssi); });
-            sender->tag("td").body([&]() { sender->sendSafe(entry.name); });
-            sender->tag("td").body([&]() { sender->sendSafe(entry.info); });
-        });
+        snprintfSafeHtmlStr(safeName, sizeof(safeName), entry.name);
+        snprintf(toSend, sizeof(toSend),
+                    "<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>",
+                    entry.id, entry.rssi, safeName, entry.info);
+        sender->send(toSend);
     }
-    sender->send("</tbody></table></div>");
+    sender->send(
+                "</tbody>"
+            "</table>"
+        "</div>");
 }
 
 BleRadarHtml::BleRadarHtml(BleRadarResults &rBleRadarResults):
