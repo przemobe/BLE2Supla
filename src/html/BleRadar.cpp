@@ -139,19 +139,23 @@ void BleRadarResults::send(Supla::WebSender *sender)
             "<table><thead><tr><th>Adres MAC</th><th>RSSI</th><th>Nazwa</th><th>Czujniki</th></tr></thead>"
                 "<tbody>");
 
-    std::lock_guard<std::mutex> lck(_entries_mtx);
-    for (const Entry &entry : _entries)
     {
-        snprintfSafeHtmlStr(safeName, sizeof(safeName), entry.name);
-        snprintf(toSend, sizeof(toSend),
-                    "<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>",
-                    entry.id, entry.rssi, safeName, entry.info);
-        sender->send(toSend);
+        std::lock_guard<std::mutex> lck(_entries_mtx);
+        for (const Entry &entry : _entries)
+        {
+            snprintfSafeHtmlStr(safeName, sizeof(safeName), entry.name);
+            snprintf(toSend, sizeof(toSend),
+                        "<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>",
+                        entry.id, entry.rssi, safeName, entry.info);
+            sender->send(toSend);
+        }
     }
+
     sender->send(
                 "</tbody>"
             "</table>"
-        "</div>");
+        // "</div>" // end tag is sent by Supla
+    );
 }
 
 BleRadarHtml::BleRadarHtml(BleRadarResults &rBleRadarResults):
