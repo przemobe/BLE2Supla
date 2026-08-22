@@ -22,12 +22,10 @@ namespace Html {
         typedef std::function<void()> OnSaveCb_t;
 
     private:
-        constexpr static const char* TAG_COUNT_SELECTOR = "BLE_COUNT";
-
-        constexpr static const char* TAG_INTERVAL_TIME = "BLES_IVAL";
-        constexpr static const char* TAG_SCAN_TIME = "BLES_TIME";
-        constexpr static const char* TAG_VALID_TIME = "BLES_VALID";
-
+        #define TAG_COUNT_SELECTOR  "BLE_COUNT"
+        #define TAG_INTERVAL_TIME   "BLES_IVAL"
+        #define TAG_SCAN_TIME       "BLES_TIME"
+        #define TAG_VALID_TIME      "BLES_VALID"
 
         size_t maxCount = 16;
 
@@ -73,147 +71,134 @@ namespace Html {
             return validTime;
         }
 
-        void send(Supla::WebSender* sender) {
+        void send(Supla::WebSender* sender)
+        {
             auto cfg = Supla::Storage::ConfigInstance();
             if (!cfg)
                 return;
 
-            sender->send("</div>"); // END BOX PREVIOUS
-
-            sender->send("<div class=\"box\">");
-            sender->send("<h3>BLE Settings</h3>");
-
-            sender->send("<script>"
-                         "function formatMac(targ) {"
-                         "let value = targ.value.replace(/[^a-fA-F0-9]/g, '');"
-                         "value = value.toUpperCase();"
-                         "let formattedValue = value.match(/.{1,2}/g)?.join(':') || '';"
-                         "targ.value = formattedValue;"
-                         "}</script>");
-
-            sender->send("<script>"
-                         "function changeCount(val) {"
-                         "const maxInputs = 100;"
-                         "const visibleCount = parseInt(val);"
-                         "for (let i = 1; i <= maxInputs; i++) {"
-                         "const input = document.getElementById(`BLEDEV${i}`);"
-                         "if (input)"
-                         "{input.style.display = (i <= visibleCount) ? '' : 'none';}"
-                         "else"
-                         "{break;}"
-                         "}"
-                         "}</script>");
-
-
             uint8_t count = 1;
             cfg->getUInt8(TAG_COUNT_SELECTOR, &count);
 
-            sender->send("<script>"
-                         "window.onload = function () { "
-                         "changeCount(");
-            sender->send(count);
-            sender->send(");"
-                         "}"
-                         "</script>");
-
-
             uint32_t scanInterval = 55;
             cfg->getUInt32(TAG_INTERVAL_TIME, &scanInterval);
-            // form-field BEGIN
-            sender->send("<div class=\"form-field\">");
-            sender->sendLabelFor(TAG_INTERVAL_TIME, "Interwał Skanowania [s]");
-            sender->send("<input type=\"number\" step=\"1\" ");
-            sender->sendNameAndId(TAG_INTERVAL_TIME);
-            sender->send(" min=\"10\" max=\"600\" value=\"");
-            sender->send(scanInterval);
-            sender->send("\">");
-            sender->send("</div>");
 
             uint32_t scanTime = 5;
             cfg->getUInt32(TAG_SCAN_TIME, &scanTime);
-            // form-field BEGIN
-            sender->send("<div class=\"form-field\">");
-            sender->sendLabelFor(TAG_SCAN_TIME, "Czas skanowania [s]");
-            sender->send("<input type=\"number\" step=\"1\" ");
-            sender->sendNameAndId(TAG_SCAN_TIME);
-            sender->send(" min=\"2\" max=\"20\" value=\"");
-            sender->send(scanTime);
-            sender->send("\">");
-            sender->send("</div>");
 
             uint32_t validTime = 240;
             cfg->getUInt32(TAG_VALID_TIME, &validTime);
+
+            sender->send(
+            // END BOX PREVIOUS
+                "</div>"
+                "<div class=\"box\">"
+                "<h3>BLE Settings</h3>"
+
+                "<script>"
+                    "function formatMac(targ) {"
+                        "let value = targ.value.replace(/[^a-fA-F0-9]/g, '');"
+                        "value = value.toUpperCase();"
+                        "let formattedValue = value.match(/.{1,2}/g)?.join(':') || '';"
+                        "targ.value = formattedValue;"
+                    "}"
+                "</script>"
+
+                "<script>"
+                    "function changeCount(val) {"
+                        "const maxInputs = 100;"
+                        "const visibleCount = parseInt(val);"
+                        "for (let i = 1; i <= maxInputs; i++) {"
+                            "const input = document.getElementById(`BLEDEV${i}`);"
+                            "if (input) {"
+                                "input.style.display = (i <= visibleCount) ? '' : 'none';"
+                            "}"
+                            "else {"
+                                "break;"
+                            "}"
+                        "}"
+                    "}"
+                "</script>"
+                "<script>"
+                    "window.onload = function () { "
+                    "changeCount(");
+            sender->send(count);
+            sender->send(
+                    ");"
+                    "}"
+                "</script>"
+
             // form-field BEGIN
-            sender->send("<div class=\"form-field\">");
-            sender->sendLabelFor(TAG_VALID_TIME, "Ważność pomiarów [s]");
-            sender->send("<input type=\"number\" step=\"1\" ");
-            sender->sendNameAndId(TAG_VALID_TIME);
-            sender->send(" min=\"20\" max=\"1200\" value=\"");
+                "<div class=\"form-field\">"
+                    "<label for=\"" TAG_INTERVAL_TIME "\">Interwał skanowania [s]</label>"
+                    "<input type=\"number\" step=\"1\" name=\"" TAG_INTERVAL_TIME "\" id=\"" TAG_INTERVAL_TIME "\" min=\"10\" max=\"600\" value=\"");
+            sender->send(scanInterval);
+            sender->send("\">"
+                "</div>" // form field
+
+            // form-field BEGIN
+                "<div class=\"form-field\">"
+                    "<label for=\"" TAG_SCAN_TIME "\">Czas skanowania [s]</label>"
+                    "<input type=\"number\" step=\"1\" name=\"" TAG_SCAN_TIME "\" id=\"" TAG_SCAN_TIME "\" min=\"2\" max=\"20\" value=\"");
+            sender->send(scanTime);
+            sender->send("\">"
+                "</div>" // form field
+
+            // form-field BEGIN
+                "<div class=\"form-field\">"
+                    "<label for=\"" TAG_VALID_TIME "\">Ważność pomiarów [s]</label>"
+                    "<input type=\"number\" step=\"1\" name=\"" TAG_VALID_TIME "\" id=\"" TAG_VALID_TIME "\" min=\"20\" max=\"1200\" value=\"");
             sender->send(validTime);
-            sender->send("\">");
-            sender->send("</div>");
+            sender->send("\">"
+                "</div>" // form field
 
             // form-field BEGIN
-            sender->send("<div class=\"form-field\">");
-            sender->sendLabelFor(TAG_COUNT_SELECTOR, "Ilość urządzeń BLE");
+                "<div class=\"form-field\">"
+                    "<label for=\"" TAG_COUNT_SELECTOR "\">Liczba urządzeń BLE</label>"
+                    "<select name=\"" TAG_COUNT_SELECTOR "\" id=\"" TAG_COUNT_SELECTOR "\" onchange=\"changeCount(this.value);\">");
 
-            sender->send("<select");
-            sender->sendNameAndId(TAG_COUNT_SELECTOR);
-            sender->send("onchange=\"changeCount(this.value);\">");
-
-            for (size_t q = 0; q < maxCount; q++) {
-                sender->send("<option value=\"");
-                sender->send(q + 1);
-                sender->send("\"");
-
-                sender->send(selected((q + 1) == count));
-
-                sender->send(">");
-                sender->send(q + 1);
-                sender->send("</option>");
+            char toSend[512];
+            for (size_t q = 0; q < maxCount; q++)
+            {
+                snprintf(toSend, sizeof(toSend), "<option value=\"%u\"%s>%u</option>", q + 1, ((q + 1) == count) ? " selected" : "", q + 1);
+                sender->send(toSend);
             }
-            sender->send("</select></div>"); // form field
+            sender->send(
+                    "</select>"
+                "</div>"); // form field
 
-            sender->send("</div>");
 
+            char macTag[32];
+            char mac[32];
 
+            static const char bledevHtmlTemplate[] = "</div>" // prev BOX
+                "<div class=\"box\" id=\"BLEDEV%u\">" // BOX
+                    "<h3>Czujnik BLE %u</h3>"
+                    "<div class=\"form-field\">"
+                        "<label for=\"%s\">Adres MAC</label>"
+                        "<input name=\"%s\" id=\"%s\""
+                            " maxlength=\"17\""
+                            " placeholder=\"AB:CD:EF:12:34:56\""
+                            " style=\"text-transform:uppercase;\""
+                            " oninput=\"formatMac(this);\""
+                            " value=\"%s\">"
+                "</div>"; // FORM FIELD
 
-            for (size_t q = 0; q < maxCount; q++) {
-                char n[32];
-                snprintf(n, 32, "MAC%u", q);
+            for (size_t q = 0; q < maxCount; q++)
+            {
+                snprintf(macTag, 32, "MAC%u", q);
+                cfg->getString(macTag, mac, 32);
 
-                char mac[32] = "";
-                cfg->getString(n, mac, 32);
-
-                sender->send("<div class=\"box\" id=\"BLEDEV"); // BOX
-                sender->send(q + 1);
-                sender->send("\">");
-
-                sender->send("<h3>Czujnik BLE ");
-                sender->send(q + 1);
-                sender->send("</h3>");
-
-                sender->send("<div class=\"form-field\">");
-                sender->sendLabelFor(n, "Adres MAC");
-                sender->send("<input ");
-                sender->sendNameAndId(n);
-                sender->send("maxlength=\"17\"");
-                sender->send("placeholder=\"AB:CD:EF:12:34:56\"");
-                sender->send("style=\"text-transform:uppercase;\"");
-                sender->send("oninput=\"formatMac(this);\"");
-                sender->send("value=\"");
-                sender->send(mac);
-                sender->send("\">");
-                sender->send("</div>"); // FORM FIELD
+                snprintf(toSend, sizeof(toSend), bledevHtmlTemplate,
+                    q + 1, q + 1, macTag, macTag, macTag, mac);
+                sender->send(toSend);
 
                 for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
+                {
                     BLE_Sensor_Factory::SendFunctionCheckbox(sender, q + 1, (BLE_Sensor::Type)w);
-
-                sender->send("</div>"); // BOX
+                }
             }
-
-            // sender->send("<div class=\"box\">");
-
+            sender->send("</div>"); // BOX
         } // sender
 
 

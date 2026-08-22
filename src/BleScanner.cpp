@@ -1,7 +1,9 @@
-#include <BleScanner.hpp>
+#include "BleScanner.hpp"
+#include "html/ScannerResults.hpp"
 
 
 const NimBLEUUID BleScanner::NIM_BLEUUID_BTHOME(BTHOME_UUID);
+extern ScannerResults gScannerResults;
 
 
 BleScanner::BleScanner():
@@ -149,6 +151,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
+        gScannerResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
     else if (decoder.decodeBLEJson(BLEdata))
@@ -169,17 +172,20 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata.remove("cont");
         BLEdata.remove("track");
 
+        gScannerResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
-#ifdef APP_DEBUG
     else
     {
+#ifdef APP_DEBUG
         std::string serializedJson;
         serializeJson(BLEdata, serializedJson);
         printf("[BLE] Json=%s\n", serializedJson.c_str());
         printf("-------------------------------------------------------------------------------------------\n");
-    }
 #endif
+
+        gScannerResults.addResult(BLEdata);
+    }
 }
 
 

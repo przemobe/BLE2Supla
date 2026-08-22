@@ -39,32 +39,30 @@ public:
         uint8_t checkedVal = 0;
         cfg->getUInt8(tag, &checkedVal);
 
-        sender->send("<div class=\"form-field right-checkbox\">");
-        sender->sendLabelFor(tag, BLE_Sensor::TYPE_LABEL[(uint8_t)type]);
-        sender->send("<label>");
-        sender->send("<span class=\"switch\">");
+        static const char htmlTemplate[] =
+            "<div class=\"form-field right-checkbox\">"
+                "<label for=\"%s\">%s</label>"
+                "<label>"
+                    "<span class=\"switch\">"
+                        "<input type=\"hidden\" name=\"%s\" value=\"%s\">"
+                        "<input type=\"checkbox\" value=\"on\" id=\"%s\"%s onchange=\"document.getElementsByName('%s')[0].value=this.checked?'on':'off'\">"
+                        "<span class=\"slider\"></span>"
+                    "</span>"
+                "</label>"
+            "</div>";
 
-        sender->send("<input type=\"hidden\" name=\"");
-        sender->send(tag);
-        sender->send("\" ");
-        sender->send("value=\"");
-        sender->send(checkedVal ? "on" : "off");
-        sender->send("\">");
+        char toSend[512];
+        int status = snprintf(toSend, sizeof(toSend), htmlTemplate,
+            tag, BLE_Sensor::TYPE_LABEL[(uint8_t)type],
+            tag, checkedVal ? "on" : "off",
+            tag, checkedVal ? " checked" : "", tag);
 
-        sender->send("<input type=\"checkbox\" value=\"on\" id=\"");
-        sender->send(tag);
-        sender->send("\" ");
-        sender->send(checkedVal ? " checked" : "");
-        sender->send(" onchange=\"document.getElementsByName('");
-        sender->send(tag);
-        sender->send("')[0].value = this.checked ? 'on' : 'off'\"");
-        sender->send(">");
-
-        sender->send("<span class=\"slider\"></span>");
-
-        sender->send("</span>");
-        sender->send("</label>");
-        sender->send("</div>");
+        if ((0 > status) || (sizeof(toSend) <= status))
+        {
+            ESP_LOGE("HTML", "SendFunctionCheckbox fail to create");
+            return;
+        }
+        sender->send(toSend);
     }
 
     static bool HandleResponse(uint8_t devNum, BLE_Sensor::Type type, const char* key, const char* value) {
