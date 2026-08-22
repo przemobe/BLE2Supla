@@ -1,8 +1,8 @@
-#include <html/BleRadar.hpp>
+#include "html/ScannerResults.hpp"
 #include <cstring>
 
 
-void BleRadarResults::addResult(JsonObject data)
+void ScannerResults::addResult(JsonObject data)
 {
     if (not data["id"].is<const char*>())
     {
@@ -123,7 +123,7 @@ void snprintfSafeHtmlStr(char *out, size_t outSize, const char *in)
     *out = '\0';
 }
 
-void BleRadarResults::send(Supla::WebSender *sender)
+void ScannerResults::send(Supla::WebSender *sender)
 {
     if (!sender)
     {
@@ -158,12 +158,12 @@ void BleRadarResults::send(Supla::WebSender *sender)
     );
 }
 
-BleRadarHtml::BleRadarHtml(BleRadarResults &rBleRadarResults):
+ScanResultsHtml::ScanResultsHtml(ScannerResults &rBleRadarResults):
     _rBleRadarResults(rBleRadarResults)
 {
 }
 
-void BleRadarHtml::send(Supla::WebSender *sender)
+void ScanResultsHtml::send(Supla::WebSender *sender)
 {
     _rBleRadarResults.send(sender);
 }

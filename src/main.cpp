@@ -1,10 +1,10 @@
-#include <main.hpp>
+#include "main.hpp"
 #include <HTTPUpdateServer.h>
-#include <html/BleRadar.hpp>
+#include "html/ScannerResults.hpp"
 
 
-HTTPUpdateServer httpUpdater;
-BleRadarResults bleRadarResults;
+HTTPUpdateServer gHTTPUpdateServer;
+ScannerResults gScannerResults;
 
 
 void setup() {
@@ -32,7 +32,7 @@ void setup() {
     SuplaDevice.setInitialMode(Supla::InitialMode::StartInCfgMode);
 
     initHtml();
-    httpUpdater.setup(suplaServer.getServerPtr(), "/update");
+    gHTTPUpdateServer.setup(suplaServer.getServerPtr(), "/update");
 
     SuplaDevice.begin();
 }
@@ -62,7 +62,7 @@ void initHtml() {
     new Supla::Html::StatusLedParameters;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
-    new BleRadarHtml(bleRadarResults);
+    new ScanResultsHtml(gScannerResults);
 
     auto setScannerParams = []() {
         printf("BLE Scanning params: %u / %u [s]\n", bleCfg->getScanTime(), bleCfg->getScanInterval());

@@ -1,9 +1,9 @@
-#include <BleScanner.hpp>
-#include <html/BleRadar.hpp>
+#include "BleScanner.hpp"
+#include "html/ScannerResults.hpp"
 
 
 const NimBLEUUID BleScanner::NIM_BLEUUID_BTHOME(BTHOME_UUID);
-extern BleRadarResults bleRadarResults;
+extern ScannerResults gScannerResults;
 
 
 BleScanner::BleScanner():
@@ -151,7 +151,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
-        bleRadarResults.addResult(BLEdata);
+        gScannerResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
     else if (decoder.decodeBLEJson(BLEdata))
@@ -172,7 +172,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata.remove("cont");
         BLEdata.remove("track");
 
-        bleRadarResults.addResult(BLEdata);
+        gScannerResults.addResult(BLEdata);
         callSensors(mac_adress, BLEdata);
     }
     else
@@ -184,7 +184,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         printf("-------------------------------------------------------------------------------------------\n");
 #endif
 
-        bleRadarResults.addResult(BLEdata);
+        gScannerResults.addResult(BLEdata);
     }
 }
 

@@ -9,7 +9,7 @@
 //#define ARDUINOJSON_USE_LONG_LONG 1
 #include <ArduinoJson.h>
 
-class BleRadarResults
+class ScannerResults
 {
 public:
     void addResult(JsonObject data);
@@ -31,12 +31,12 @@ protected:
 };
 
 
-class BleRadarHtml : public Supla::HtmlElement
+class ScanResultsHtml : public Supla::HtmlElement
 {
 public:
-    BleRadarHtml(BleRadarResults &rBleRadarResults);
+    ScanResultsHtml(ScannerResults &rBleRadarResults);
     void send(Supla::WebSender *sender);
 
 protected:
-    BleRadarResults &_rBleRadarResults;
+    ScannerResults &_rBleRadarResults;
 };
