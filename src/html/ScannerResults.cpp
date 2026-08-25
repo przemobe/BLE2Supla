@@ -87,42 +87,47 @@ void snprintfSafeHtmlStr(char *out, size_t outSize, const char *in)
     outSize--;
     for (; *in && outSize; in++)
     {
+        const char *subst = nullptr;
         switch (*in)
         {
             case '\'':
-                strncpy(out, "&apos;", outSize);
-                outSize += 6;
-                out += 6;
+                subst = "&apos;";
                 break;
 
             case '"':
-                strncpy(out, "&quot;", outSize);
-                outSize += 6;
-                out += 6;
+                subst = "&quot;";
                 break;
 
             case '<':
-                strncpy(out, "&lt;", outSize);
-                outSize += 4;
-                out += 4;
+                subst = "&lt;";
                 break;
 
             case '>':
-                strncpy(out, "&gt;", outSize);
-                outSize += 4;
-                out += 4;
+                subst = "&gt;";
                 break;
 
             case '&':
-                strncpy(out, "&amp;", outSize);
-                outSize += 5;
-                out += 5;
+                subst = "&amp;";
                 break;
 
             default:
                 *out = *in;
-                out++;
                 outSize--;
+                out++;
+                break;
+        }
+
+        if (subst)
+        {
+            size_t len = strlen(subst);
+            if (len > outSize)
+            {
+                // no place in out buffer
+                break;
+            }
+            strcpy(out, subst);
+            outSize -= len;
+            out += len;
         }
     }
 
