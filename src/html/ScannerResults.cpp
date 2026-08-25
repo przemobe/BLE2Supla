@@ -54,6 +54,12 @@ void ScannerResults::addResult(JsonObject data)
         *infoPtr++ = 'B';
     }
 
+    // if data cannot be decrypted
+    if ((infoPtr == newEntry.info) && data["encr"].is<bool>() && data["encr"].as<bool>())
+    {
+        strcpy(infoPtr, "\xf0\x9f\x94\x92");
+    }
+
     std::lock_guard<std::mutex> lck(_entries_mtx);
     const auto it = std::find_if(_entries.begin(), _entries.end(), [&newEntry](const Entry &entry)
         {
