@@ -1,8 +1,10 @@
 #include "BleScanner.hpp"
 #include "html/ScannerResults.hpp"
+#include "XMiBeacon.hpp"
 
 
 const NimBLEUUID BleScanner::NIM_BLEUUID_BTHOME(BTHOME_UUID);
+const NimBLEUUID BleScanner::NIM_BLEUUID_XMIBEACON(XMIBEACON_UUID);
 extern ScannerResults gScannerResults;
 
 
@@ -16,6 +18,11 @@ BleScanner::BleScanner():
     for (size_t q = 0; q < MAX_SENSORS; q++) {
         sensorsID[q].cb = nullptr;
         sensorsID[q].ID.clear();
+    }
+
+    for (MacBleKey &rMacBleKey : macBleKeys)
+    {
+        rMacBleKey.u64mac = 0;
     }
 }
 
@@ -102,7 +109,6 @@ String BleScanner::hexifyString(const std::string &deviceServiceData) {
     return hexString;
 }
 
-
 void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 
     JsonObject BLEdata = doc.to<JsonObject>();
@@ -143,6 +149,20 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
     if (serviceDataCount &&
         (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_BTHOME) &&
         decodeBtHome(BLEdata, *advertisedDevice))
+    {
+#ifdef APP_DEBUG
+        std::string serializedJson;
+        serializeJson(BLEdata, serializedJson);
+        printf("[BLE] Json=%s\n", serializedJson.c_str());
+        printf("-------------------------------------------------------------------------------------------\n");
+#endif
+
+        gScannerResults.addResult(BLEdata);
+        callSensors(mac_adress, BLEdata);
+    }
+    else if (serviceDataCount &&
+        (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_XMIBEACON) &&
+        decodeXMiBeacon(BLEdata, *advertisedDevice))
     {
 #ifdef APP_DEBUG
         std::string serializedJson;
@@ -310,4 +330,204 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
     bthome_free_reports(ptReports);
 
     return true;
+}
+
+
+bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice)
+{
+    const std::string serviceData = advertisedDevice.getServiceData(0);
+    const bool isEncrypted = xMiIsServiceDataEncrypted((uint8_t*)serviceData.c_str());
+    const NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
+    const uint8_t *macRev = peerMacAddr.getVal();
+    const uint8_t *bindKey = nullptr;
+
+#ifdef APP_DEBUG
+    printf("[XMI] serviceData len(%u) enc(%u)=%s\n", serviceData.size(), isEncrypted, BleScanner::hexifyString({serviceData.c_str(), serviceData.size()}).c_str());
+#endif
+
+    if (isEncrypted)
+    {
+        addResultValue(BLEdata, "encr", true);
+
+        const uint64_t u64mac = static_cast<uint64_t>(peerMacAddr);
+        bindKey = findBleKey(u64mac);
+        if (nullptr == bindKey)
+        {
+            ESP_LOGW(TAG, "[XMI] Cannot acquire BIND KEY for MAC=%012llX", u64mac);
+            return false;
+        }
+
+#ifdef APP_DEBUG
+        printf("[XMI] revMAC=%s\n", BleScanner::hexifyString({(const char*)macRev, 6}).c_str());
+        printf("[XMI] bindKey=%s\n", BleScanner::hexifyString({(const char*)bindKey, 16}).c_str());
+#endif
+    }
+
+    const uint8_t *dataPointer = nullptr;
+    size_t dataLength = 0;
+    uint8_t buffer[64];
+    if (false == xMiBeaconGetData((const uint8_t*)serviceData.c_str(), serviceData.size(), bindKey, macRev, buffer, dataPointer, dataLength))
+    {
+        ESP_LOGE(TAG, "[XMI] xMiBeaconGetData fail");
+        return false;
+    }
+
+#ifdef APP_DEBUG
+    printf("[XMI] data(%u)=%s\n", dataLength, BleScanner::hexifyString({(const char*)dataPointer, dataLength}).c_str());
+#endif
+
+    // Loop through the TLV container data chunk
+    size_t index = 0;
+    uint32_t reportCnt = 0;
+    while (index + 3 <= dataLength)
+    {
+        const uint16_t objectId = dataPointer[index] | (dataPointer[index + 1] << 8);
+        const uint8_t objLength = dataPointer[index + 2];
+        index += 3;
+
+        if (index + objLength > dataLength)
+        {
+            break;
+        }
+
+        switch (objectId)
+        {
+            case 0x1004:
+            {
+                // Temperature
+                int16_t rawTemp = dataPointer[index] | (dataPointer[index + 1] << 8);
+#ifdef APP_DEBUG
+                printf("[XMI] 0x1004 Temperature: %.1f °C\n", rawTemp / 10.0);
+#endif
+                addResultValue(BLEdata, "tempc", rawTemp * 0.1d);
+                reportCnt++;
+                break;
+            }
+            case 0x1006:
+            {
+                // Humidity
+                uint16_t rawHum = dataPointer[index] | (dataPointer[index + 1] << 8);
+#ifdef APP_DEBUG
+                printf("[XMI] 0x1006 Humidity: %.1f %%\n", rawHum / 10.0);
+#endif
+                addResultValue(BLEdata, "hum", rawHum * 0.01d);
+                reportCnt++;
+                break;
+            }
+            case 0x100D:
+            {
+                // Combo Temperature & Humidity
+                int16_t rawTemp = dataPointer[index] | (dataPointer[index + 1] << 8);
+                uint16_t rawHum = dataPointer[index + 2] | (dataPointer[index + 3] << 8);
+#ifdef APP_DEBUG
+                printf("[XMI] 0x100D Temperature: %.1f °C\n", rawTemp / 10.0);
+                printf("             Humidity: %.1f %%\n", rawHum / 10.0);
+#endif
+                addResultValue(BLEdata, "tempc", rawTemp * 0.1d);
+                addResultValue(BLEdata, "hum", rawHum * 0.1d);
+                reportCnt++;
+                break;
+            }
+            case 0x100A:
+            {
+                // Battery
+#ifdef APP_DEBUG
+                printf("[XMI] 0x100A Battery: %d %%\n", dataPointer[index]);
+#endif
+                addResultValue(BLEdata, "batt", dataPointer[index] * 1.0d);
+                reportCnt++;
+                break;
+            }
+            case 0x4c01:
+            {
+                // Temperature
+                float fval = *reinterpret_cast<const float*>(dataPointer + index);
+#ifdef APP_DEBUG
+                printf("[XMI] 0x4c01 Temperature: %.2f °C\n", fval);
+#endif
+                addResultValue(BLEdata, "tempc", fval * 1.0d);
+                reportCnt++;
+                break;
+            }
+            case 0x4c02:
+            {
+                // Humidity
+#ifdef APP_DEBUG
+                printf("[XMI] 0x4c02 Humidity: %u %%\n", dataPointer[index]);
+#endif
+                addResultValue(BLEdata, "hum", dataPointer[index] * 1.0d);
+                reportCnt++;
+                break;
+            }
+            case 0x4c03:
+            {
+                // Battery
+#ifdef APP_DEBUG
+                printf("[XMI] 0x4c03 Battery: %u %%\n", dataPointer[index]);
+#endif
+                addResultValue(BLEdata, "batt", dataPointer[index] * 1.0d);
+                reportCnt++;
+                break;
+            }
+            case 0x4c08:
+            {
+                // Humidity
+                float fval = *reinterpret_cast<const float*>(dataPointer + index);
+#ifdef APP_DEBUG
+                printf("[XMI] 0x4c08 Humidity: %.2f %%\n", fval * 1.0d);
+#endif
+                addResultValue(BLEdata, "hum", fval);
+                reportCnt++;
+                break;
+            }
+            default:
+            {
+                ESP_LOGW(TAG, "[XMI] Unknown objectId(0x%x) len(%u)", objectId, objLength);
+                break;
+            }
+        }
+        index += objLength;
+    }
+
+    if (0 == reportCnt)
+    {
+        ESP_LOGE(TAG, "[XMI] No objectId is decoded!");
+        return false;
+    }
+
+    return true;
+}
+
+
+const uint8_t * BleScanner::findBleKey(const uint64_t u64mac) const
+{
+    for (const MacBleKey &rMacBleKey : macBleKeys)
+    {
+        if (rMacBleKey.u64mac == u64mac)
+        {
+            return rMacBleKey.bleKey;
+        }
+    }
+    return nullptr;
+}
+
+
+void BleScanner::setBleKey(const size_t devIdx, const uint64_t u64mac, const uint8_t *bleKey)
+{
+    if (MAX_DEVICES_COUNT < devIdx)
+    {
+        return;
+    }
+    macBleKeys[devIdx].u64mac = u64mac;
+    memcpy(macBleKeys[devIdx].bleKey, bleKey, sizeof(macBleKeys[devIdx].bleKey));
+}
+
+
+void BleScanner::clearBleKey(const size_t devIdx)
+{
+    if (MAX_DEVICES_COUNT < devIdx)
+    {
+        return;
+    }
+    macBleKeys[devIdx].u64mac = 0;
 }

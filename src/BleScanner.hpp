@@ -28,10 +28,15 @@ public:
 
     void setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis);
 
+    const uint8_t * findBleKey(const uint64_t u64mac) const;
+    void setBleKey(const size_t devIdx, const uint64_t u64mac, const uint8_t *bleKey);
+    void clearBleKey(const size_t devIdx);
+
 private:
     constexpr static const char* TAG = "BleScanner";
     constexpr static const size_t MAX_SENSORS = MAX_SENSORS_COUNT;
     static const NimBLEUUID NIM_BLEUUID_BTHOME;
+    static const NimBLEUUID NIM_BLEUUID_XMIBEACON;
 
     struct Callback_t {
         CallbackFun_t cb;
@@ -40,9 +45,9 @@ private:
     Callback_t sensorsID[MAX_SENSORS];
 
 
-
     static String hexifyString(const std::string &deviceServiceData);
     bool decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice);
+    bool decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice);
 
 
 
@@ -55,4 +60,10 @@ private:
 
     unsigned long scanTimeMillis;
     unsigned long scanIntervalMillis;
+
+    struct MacBleKey
+    {
+        uint64_t u64mac;
+        uint8_t bleKey[16];
+    } macBleKeys[MAX_DEVICES_COUNT];
 };
