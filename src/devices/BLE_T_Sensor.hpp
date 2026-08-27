@@ -28,7 +28,7 @@ private:
         }
         else
         {
-            temp = TEMPERATURE_NOT_AVAILABLE;
+            return;
         }
 
 

@@ -31,7 +31,7 @@ private:
         }
         else
         {
-            humi = HUMIDITY_NOT_AVAILABLE;
+            return;
         }
 
         printf("TH SENSOR '%s' -> %0.0f%%\n", MAC.c_str(), humi);
