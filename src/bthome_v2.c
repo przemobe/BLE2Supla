@@ -11,6 +11,7 @@
 #include "mbedtls/ccm.h"
 #include "esp_check.h"
 
+const uint16_t BTHOME_UUID = 0xfcd2;
 static const char *TAG = "bthome";
 static const char *BTHOME_COUNTER_KEY = "counter";
 

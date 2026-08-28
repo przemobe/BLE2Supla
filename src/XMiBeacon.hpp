@@ -17,9 +17,6 @@
 #define XMIBEACON_BINDKEY_BIT_LEN   (128)
 #define XMIBEACON_MAC_LEN           (6)
 
-const static uint16_t XMIBEACON_UUID = 0xfe95;
-const static uint8_t XMIBEACON_AUTHDATA = 0x11;
-
 #define XMIBEACON_FRAMECTRL_BYTE0   (0)
 #define XMIBEACON_FRAMECTRL_BYTE1   (1)
 #define XMIBEACON_PRODID_BYTE0      (2)
@@ -33,6 +30,9 @@ const static uint8_t XMIBEACON_AUTHDATA = 0x11;
 #define XMIBEACON_FRAMECTRL_MESH_MSK    (0x0080)
 #define XMIBEACON_FRAMECTRL_REGISTR_MSK (0x0100)
 #define XMIBEACON_FRAMECTRL_SOLICIT_MSK (0x0200)
+
+extern const uint16_t XMIBEACON_UUID;
+extern const uint8_t XMIBEACON_AUTHDATA;
 
 bool xMiBeaconDecrypt(const uint8_t *bindKey, const uint8_t *macReverse, const uint8_t *payload, size_t totalLength,
     size_t encryptedDataOffset, uint8_t *outPlaintext, size_t &outLen);

@@ -514,7 +514,7 @@ const uint8_t * BleScanner::findBleKey(const uint64_t u64mac) const
 
 void BleScanner::setBleKey(const size_t devIdx, const uint64_t u64mac, const uint8_t *bleKey)
 {
-    if (MAX_DEVICES_COUNT < devIdx)
+    if (MAX_DEVICES_COUNT <= devIdx)
     {
         return;
     }
@@ -525,7 +525,7 @@ void BleScanner::setBleKey(const size_t devIdx, const uint64_t u64mac, const uin
 
 void BleScanner::clearBleKey(const size_t devIdx)
 {
-    if (MAX_DEVICES_COUNT < devIdx)
+    if (MAX_DEVICES_COUNT <= devIdx)
     {
         return;
     }

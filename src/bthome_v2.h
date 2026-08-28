@@ -15,7 +15,7 @@ extern "C" {
 
 // About detailed definitions of the struct in See https://bthome.io/format/
 
-const static uint16_t BTHOME_UUID = 0xfcd2;
+extern const uint16_t BTHOME_UUID;
 
 /**
  * @brief bthome handle type

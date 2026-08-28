@@ -7,6 +7,11 @@
 #include "XMiBeacon.hpp"
 #include <mbedtls/ccm.h>
 #include <esp_check.h>
+#include <esp_log.h>
+#include <cstring>
+
+const uint16_t XMIBEACON_UUID = 0xfe95;
+const uint8_t XMIBEACON_AUTHDATA = 0x11;
 
 // References:
 // https://iot.mi.com/v2/new/doc/embedded-dev/ble-sdk/function-dev/ble-mibeacon
@@ -162,6 +167,10 @@ bool xMiBeaconGetData(const uint8_t *serviceData, const size_t serviceDataLength
 
 bool xMiIsServiceDataEncrypted(const uint8_t *serviceData)
 {
+    if (nullptr == serviceData)
+    {
+        return false;
+    }
     const uint16_t frameControl = serviceData[XMIBEACON_FRAMECTRL_BYTE0] | (serviceData[XMIBEACON_FRAMECTRL_BYTE1] << 8);
     return (frameControl & XMIBEACON_FRAMECTRL_ISENCR_MSK);
 }
