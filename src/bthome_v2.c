@@ -23,7 +23,7 @@ static const char *BTHOME_COUNTER_KEY = "counter";
 #define BTHOME_DEVICE_INFO_LEN  (1)
 #define BTHOME_MIC_LEN          (4)
 
-#define BTHOME_ENCDATA_HDRTAIL_LEN          (BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN + BTHOME_COUNTER_LEN + BTHOME_MIC_LEN)
+#define BTHOME_ENCDATA_HDRTAIL_LEN          (BTHOME_DEVICE_INFO_LEN + BTHOME_COUNTER_LEN + BTHOME_MIC_LEN)
 #define BTHOME_ENCDATA_CIPHERTEXT_LEN_MAX   (BTHOME_PAYLOAD_LEN_MAX - BTHOME_ENCDATA_HDRTAIL_LEN)
 
 /* Stream operation macros */
@@ -252,21 +252,21 @@ esp_err_t bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, co
     uint8_t *nonce_p = nonce;
     memcpy(nonce_p, bthome->peer_mac, BTHOME_MAC_LEN);
     nonce_p += BTHOME_MAC_LEN;
-    memcpy(nonce_p, data, BTHOME_UUID_LEN);
-    nonce_p += BTHOME_UUID_LEN;
-    memcpy(nonce_p, data + BTHOME_UUID_LEN, BTHOME_DEVICE_INFO_LEN);
+    *nonce_p++ = 0xFF & BTHOME_UUID;
+    *nonce_p++ = 0xFF & (BTHOME_UUID >> 8);
+    memcpy(nonce_p, data, BTHOME_DEVICE_INFO_LEN);
     nonce_p += BTHOME_DEVICE_INFO_LEN;
-    memcpy(nonce_p, &data[data_len - 8], BTHOME_COUNTER_LEN);
+    memcpy(nonce_p, data + data_len - BTHOME_MIC_LEN - BTHOME_COUNTER_LEN, BTHOME_COUNTER_LEN);
     nonce_p += BTHOME_COUNTER_LEN;
 
     uint8_t mic[BTHOME_MIC_LEN];
-    memcpy(mic, data + data_len - 4, BTHOME_MIC_LEN);
+    memcpy(mic, data + data_len - BTHOME_MIC_LEN, BTHOME_MIC_LEN);
 
     *dec_data_len = data_len - BTHOME_ENCDATA_HDRTAIL_LEN;
     int ret = mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len,
                                        nonce, BTHOME_NONCE_LEN,
                                        NULL, 0,
-                                       data + BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN, dec_data,
+                                       data + BTHOME_DEVICE_INFO_LEN, dec_data,
                                        mic, BTHOME_MIC_LEN);
     if (0 != ret)
     {
@@ -277,18 +277,18 @@ esp_err_t bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, co
     return ESP_OK;
 }
 
-static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const uint8_t *data, uint8_t len)
+bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const uint8_t *data, uint8_t len)
 {
     bthome_t *bthome = (bthome_t *)handle;
     bthome_device_info_t info;
 
-    if (3 >= len)
+    if (BTHOME_DEVICE_INFO_LEN >= len)
     {
         ESP_LOGE(TAG, "service data length %u too short", len);
         return NULL;
     }
 
-    info.all = data[2];
+    info.all = data[0];
 
     ESP_LOGD(TAG, "device_info: %x\n", info.all);
     ESP_LOGD(TAG, "version: %d\n", info.bit.bthome_version);
@@ -297,8 +297,8 @@ static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const
 
     if (!info.bit.encryption_flag)
     {
-        ESP_LOG_BUFFER_HEX_LEVEL("raw payload", data + 3, len - 3, ESP_LOG_DEBUG);
-        return bthome_parse_payload(data + 3, len - 3);
+        ESP_LOG_BUFFER_HEX_LEVEL("raw payload", data + BTHOME_DEVICE_INFO_LEN, len - BTHOME_DEVICE_INFO_LEN, ESP_LOG_DEBUG);
+        return bthome_parse_payload(data + BTHOME_DEVICE_INFO_LEN, len - BTHOME_DEVICE_INFO_LEN);
     }
 
     uint8_t payload_len = BTHOME_PAYLOAD_LEN_MAX;
@@ -315,27 +315,31 @@ static bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const
 
 bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *adv, uint8_t len)
 {
-    bthome_t *bthome = (bthome_t *)handle;
     size_t index = 0;
 
-    while (index < len) {
+    while (index < len)
+    {
         uint8_t length = adv[index];
-        if (length == 0) {
+        if (length == 0)
+        {
             break;
         }
 
-        if (index + length >= len) {
+        if (index + length >= len)
+        {
             ESP_LOGW(TAG, "Invalid adv length at index 0x%x length %d\n", index, length);
             break;
         }
 
-        uint8_t type = adv[index + 1];
+        const uint8_t type = adv[index + 1];
         const uint8_t *data = &adv[index + 2];
-        size_t data_length = length - 1;
-        if (type == 0x16) {
-            uint16_t uuid = (data[1] << 8) | data[0];
-            if (uuid == BTHOME_UUID) {
-                return bthome_parse_service_data(bthome, data, data_length);
+        const size_t data_length = length - 1;
+        if (type == 0x16)
+        {
+            const uint16_t uuid = (data[1] << 8) | data[0];
+            if (uuid == BTHOME_UUID)
+            {
+                return bthome_parse_service_data(handle, data + BTHOME_UUID_LEN, data_length - BTHOME_UUID_LEN);
             }
         }
 
