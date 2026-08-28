@@ -234,21 +234,43 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         }
     }
 
-    NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
-    peerMacAddr.reverseByteOrder();
-    ret = bthome_set_peer_mac_addr(pBtHomeHandle, peerMacAddr.getVal());
-    if (ESP_OK != ret)
-    {
-        ESP_LOGE(TAG, "[BTHOME] bthome_set_peer_mac_addr ERROR=%u\n", ret);
-        return false;
-    }
+    const std::string serviceData = advertisedDevice.getServiceData(0);
+    bthome_device_info_t info;
 
-    uint8_t peerKey[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // TODO: get peer key.
-    ret = bthome_set_encrypt_key(pBtHomeHandle, peerKey);
-    if (ESP_OK != ret)
+    info.all = serviceData[0];
+
+    if (info.bit.encryption_flag)
     {
-        ESP_LOGE(TAG, "[BTHOME] bthome_set_encrypt_key ERROR=%u\n", ret);
-        return false;
+        addResultValue(BLEdata, "encr", true);
+
+        NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
+        const uint64_t u64mac = static_cast<uint64_t>(peerMacAddr);
+
+        const uint8_t* peerKey = findBleKey(u64mac);
+        if (nullptr == peerKey)
+        {
+            ESP_LOGW(TAG, "[BTHOME] Cannot acquire key for MAC=%012llX", u64mac);
+            return false;
+        }
+
+#ifdef APP_DEBUG
+        printf("[BTHOME] peerKey=%s\n", BleScanner::hexifyString({(const char*)peerKey, 16}).c_str());
+#endif
+
+        ret = bthome_set_encrypt_key(pBtHomeHandle, peerKey);
+        if (ESP_OK != ret)
+        {
+            ESP_LOGE(TAG, "[BTHOME] bthome_set_encrypt_key ERROR=%u\n", ret);
+            return false;
+        }
+
+        peerMacAddr.reverseByteOrder();
+        ret = bthome_set_peer_mac_addr(pBtHomeHandle, peerMacAddr.getVal());
+        if (ESP_OK != ret)
+        {
+            ESP_LOGE(TAG, "[BTHOME] bthome_set_peer_mac_addr ERROR=%u\n", ret);
+            return false;
+        }
     }
 
     const std::vector<uint8_t> &payload = advertisedDevice.getPayload();

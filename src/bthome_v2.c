@@ -254,7 +254,7 @@ esp_err_t bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, co
     nonce_p += BTHOME_MAC_LEN;
     memcpy(nonce_p, data, BTHOME_UUID_LEN);
     nonce_p += BTHOME_UUID_LEN;
-    memcpy(nonce_p, data + 2, BTHOME_DEVICE_INFO_LEN);
+    memcpy(nonce_p, data + BTHOME_UUID_LEN, BTHOME_DEVICE_INFO_LEN);
     nonce_p += BTHOME_DEVICE_INFO_LEN;
     memcpy(nonce_p, &data[data_len - 8], BTHOME_COUNTER_LEN);
     nonce_p += BTHOME_COUNTER_LEN;
@@ -263,7 +263,11 @@ esp_err_t bthome_decrypt_payload(bthome_handle_t handle, const uint8_t *data, co
     memcpy(mic, data + data_len - 4, BTHOME_MIC_LEN);
 
     *dec_data_len = data_len - BTHOME_ENCDATA_HDRTAIL_LEN;
-    int ret = mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len, nonce, BTHOME_NONCE_LEN, NULL, 0, data + 3, dec_data, mic, BTHOME_MIC_LEN);
+    int ret = mbedtls_ccm_auth_decrypt(&bthome->aes_ctx, *dec_data_len,
+                                       nonce, BTHOME_NONCE_LEN,
+                                       NULL, 0,
+                                       data + BTHOME_UUID_LEN + BTHOME_DEVICE_INFO_LEN, dec_data,
+                                       mic, BTHOME_MIC_LEN);
     if (0 != ret)
     {
         ESP_LOGE(TAG, "mbedtls_ccm_auth_decrypt failed, ret %d", ret);
