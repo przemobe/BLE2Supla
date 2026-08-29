@@ -64,16 +64,41 @@ void initHtml() {
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
     new ScanResultsHtml(gScannerResults);
 
+    const uint8_t deviceCount = bleCfg->getDeviceCount();
+
     auto setScannerParams = []()
     {
         printf("BLE Scanning params: %u / %u [s]\n", bleCfg->getScanTime(), bleCfg->getScanInterval());
         scanner.setScanTiming(bleCfg->getScanTime() * 1000, bleCfg->getScanInterval() * 1000);
     };
+
+    auto updateDeviceKeys = [deviceCount]()
+    {
+        uint8_t bleKey[16];
+        for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)
+        {
+            bool keyStatus = bleCfg->getBKey(devIdx, bleKey);
+            if (keyStatus)
+            {
+                const uint64_t u64mac = static_cast<uint64_t>(NimBLEAddress(bleCfg->getMAC(devIdx).c_str(), 0));
+                scanner.setBleKey(devIdx, u64mac, bleKey);
+                printf("Key set for devIdx=%u MAC=%012llX\n", devIdx, u64mac);
+            }
+            else
+            {
+                scanner.clearBleKey(devIdx);
+            }
+        }
+    };
     setScannerParams();
-    bleCfg->OnSaveCallback([setScannerParams]() { setScannerParams(); });
+    updateDeviceKeys();
 
+    bleCfg->OnSaveCallback([setScannerParams, updateDeviceKeys]()
+    {
+        setScannerParams();
+        updateDeviceKeys();
+    });
 
-    const uint8_t deviceCount = bleCfg->getDeviceCount();
     printf("\n-------------------------------- BLE CONFIG DUMP [%u]\n", deviceCount);
 
     for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)

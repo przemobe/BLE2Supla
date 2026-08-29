@@ -105,6 +105,13 @@ namespace Html {
                 "</script>"
 
                 "<script>"
+                    "function formatKey32(targ) {"
+                        "let value = targ.value.replace(/[^a-fA-F0-9]/g, '');"
+                        "value = value.toUpperCase();targ.value = value;"
+                    "}"
+                "</script>"
+
+                "<script>"
                     "function changeCount(val) {"
                         "const maxInputs = 100;"
                         "const visibleCount = parseInt(val);"
@@ -168,8 +175,8 @@ namespace Html {
                 "</div>"); // form field
 
 
-            char macTag[32];
-            char mac[32];
+            char cfgKey[32];
+            char cfgVal[64];
 
             static const char bledevHtmlTemplate[] = "</div>" // prev BOX
                 "<div class=\"box\" id=\"BLEDEV%u\">" // BOX
@@ -182,15 +189,37 @@ namespace Html {
                             " style=\"text-transform:uppercase;\""
                             " oninput=\"formatMac(this);\""
                             " value=\"%s\">"
-                "</div>"; // FORM FIELD
+                    "</div>"; // FORM FIELD
+
+            static const char bkeyHtmlTemplate[] =
+                    "<div class=\"form-field\">"
+                        "<label for=\"%s\">Klucz</label>"
+                        "<input name=\"%s\" id=\"%s\""
+                            " maxlength=\"32\""
+                            " style=\"text-transform:lowercase;\""
+                            " oninput=\"formatKey32(this);\""
+                            " value=\"%s\">"
+                    "</div>"; // FORM FIELD
 
             for (size_t q = 0; q < maxCount; q++)
             {
-                snprintf(macTag, 32, "MAC%u", q);
-                cfg->getString(macTag, mac, 32);
+                snprintf(cfgKey, sizeof(cfgKey), "MAC%u", q);
+                cfg->getString(cfgKey, cfgVal, sizeof(cfgVal));
 
                 snprintf(toSend, sizeof(toSend), bledevHtmlTemplate,
-                    q + 1, q + 1, macTag, macTag, macTag, mac);
+                    q + 1, q + 1,
+                    cfgKey, cfgKey, cfgKey, cfgVal);
+                sender->send(toSend);
+
+                snprintf(cfgKey, sizeof(cfgKey), "BKEY%u", q);
+                bool bkey = cfg->getString(cfgKey, cfgVal, sizeof(cfgVal));
+                if ((false == bkey) || (32 != strlen(cfgVal)))
+                {
+                    cfgVal[0] = 0;
+                }
+
+                snprintf(toSend, sizeof(toSend), bkeyHtmlTemplate,
+                    cfgKey, cfgKey, cfgKey, cfgVal);
                 sender->send(toSend);
 
                 for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
@@ -232,10 +261,19 @@ namespace Html {
             }
 
 
-            for (size_t q = 0; q < maxCount; q++) {
+            for (size_t q = 0; q < maxCount; q++)
+            {
                 char n[32];
                 snprintf(n, 32, "MAC%u", q);
-                if (strcmp(n, key) == 0) {
+                if (strcmp(n, key) == 0)
+                {
+                    cfg->setString(n, value);
+                    return true;
+                }
+
+                snprintf(n, 32, "BKEY%u", q);
+                if (strcmp(n, key) == 0)
+                {
                     cfg->setString(n, value);
                     return true;
                 }
@@ -266,7 +304,7 @@ namespace Html {
 
         String getMAC(size_t idx)
         {
-            if (idx > maxCount)
+            if (idx >= maxCount)
             {
                 return "";
             }
@@ -280,6 +318,60 @@ namespace Html {
             cfg->getString(tag, val, 32);
 
             return val;
+        }
+
+        bool getBKey(const size_t devIdx, uint8_t *keyOut) const
+        {
+            if ((devIdx >= maxCount) || (nullptr == keyOut))
+            {
+                return false;
+            }
+
+            auto cfg = Supla::Storage::ConfigInstance();
+
+            char tag[32];
+            snprintf(tag, sizeof(tag), "BKEY%u", devIdx);
+
+            char val[64];
+            const char *valPtr = val;
+            bool status = cfg->getString(tag, val, sizeof(val));
+            if ((false == status) || (32 != strlen(val)))
+            {
+                return false;
+            }
+
+            uint8_t tmp;
+            for (size_t loop = 0; loop < 16; loop++, keyOut++)
+            {
+                tmp = 0;
+                for (size_t i = 0; i < 2; i++, valPtr++)
+                {
+                    if (('A' <= *valPtr) && ('F' >= *valPtr))
+                    {
+                        tmp |= *valPtr - 'A' + 0xA;
+                    }
+                    else if (('a' <= *valPtr) && ('f' >= *valPtr))
+                    {
+                        tmp |= *valPtr - 'a' + 0xa;
+                    }
+                    else if (('0' <= *valPtr) && ('9' >= *valPtr))
+                    {
+                        tmp |= *valPtr - '0';
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                    if (!i)
+                    {
+                        tmp <<= 4;
+                    }
+                }
+                *keyOut = tmp;
+            }
+
+            return true;
         }
 
         bool isType(BLE_Sensor::Type type, uint8_t devNum) { return BLE_Sensor_Factory::IsType(devNum + 1, type); }
