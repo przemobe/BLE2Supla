@@ -72,10 +72,12 @@ void initHtml() {
         scanner.setScanTiming(bleCfg->getScanTime() * 1000, bleCfg->getScanInterval() * 1000);
     };
 
-    auto updateDeviceKeys = [deviceCount]()
+    auto updateDeviceKeys = []()
     {
         uint8_t bleKey[16];
-        for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)
+        uint8_t devIdx = 0;
+        const uint8_t deviceCount = bleCfg->getDeviceCount();
+        for (; devIdx < deviceCount; devIdx++)
         {
             bool keyStatus = bleCfg->getBKey(devIdx, bleKey);
             if (keyStatus)
@@ -88,6 +90,10 @@ void initHtml() {
             {
                 scanner.clearBleKey(devIdx);
             }
+        }
+        for (; devIdx < MAX_DEVICES_COUNT; devIdx++)
+        {
+            scanner.clearBleKey(devIdx);
         }
     };
     setScannerParams();
