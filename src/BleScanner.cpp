@@ -273,8 +273,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         }
     }
 
-    const std::vector<uint8_t> &payload = advertisedDevice.getPayload();
-    bthome_reports_t *ptReports = bthome_parse_adv_data(pBtHomeHandle, payload.data(), payload.size());
+    bthome_reports_t *ptReports = bthome_parse_service_data(pBtHomeHandle, (const uint8_t*)serviceData.c_str(), serviceData.size());
     if (nullptr == ptReports)
     {
         ESP_LOGE(TAG, "[BTHOME] bthome_parse_adv_data fail\n");
