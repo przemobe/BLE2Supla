@@ -6,7 +6,7 @@
 #include <supla/network/web_sender.h>
 #include <supla/network/html_element.h>
 
-//#define ARDUINOJSON_USE_LONG_LONG 1
+#define ARDUINOJSON_USE_LONG_LONG 1
 #include <ArduinoJson.h>
 
 class ScannerResults

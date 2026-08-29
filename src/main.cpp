@@ -64,7 +64,8 @@ void initHtml() {
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
     new ScanResultsHtml(gScannerResults);
 
-    auto setScannerParams = []() {
+    auto setScannerParams = []()
+    {
         printf("BLE Scanning params: %u / %u [s]\n", bleCfg->getScanTime(), bleCfg->getScanInterval());
         scanner.setScanTiming(bleCfg->getScanTime() * 1000, bleCfg->getScanInterval() * 1000);
     };
@@ -72,29 +73,38 @@ void initHtml() {
     bleCfg->OnSaveCallback([setScannerParams]() { setScannerParams(); });
 
 
+    const uint8_t deviceCount = bleCfg->getDeviceCount();
+    printf("\n-------------------------------- BLE CONFIG DUMP [%u]\n", deviceCount);
 
-    printf("\n-------------------------------- BLE CONFIG DUMP [%u]\n", bleCfg->getSensorsCount());
-    for (size_t q = 0; q < bleCfg->getSensorsCount(); q++) {
-        printf("MAC: %s\n", bleCfg->getMAC(q).c_str());
+    for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)
+    {
+        printf("MAC: %s\n", bleCfg->getMAC(devIdx).c_str());
 
         for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
-            if (bleCfg->isType((BLE_Sensor::Type)w, q))
+        {
+            if (bleCfg->isType((BLE_Sensor::Type)w, devIdx))
+            {
                 printf("    - %s\n", BLE_Sensor::TYPE_LABEL[w]);
+            }
+        }
 
         printf("--------------------------------\n");
     }
     printf("\n");
 
 
+    const uint32_t validTimeMs = bleCfg->getValidTime() * 1000;
+    for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)
+    {
+        String mac = bleCfg->getMAC(devIdx);
 
-    for (size_t q = 0; q < bleCfg->getSensorsCount(); q++) {
-        String mac = bleCfg->getMAC(q);
-        uint32_t validTimeMs = bleCfg->getValidTime() * 1000;
-
-        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++) {
+        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
+        {
             BLE_Sensor::Type type = (BLE_Sensor::Type)w;
-            if (bleCfg->isType((BLE_Sensor::Type)w, q))
+            if (bleCfg->isType(type, devIdx))
+            {
                 BLE_Sensor_Factory::CreateSensor(type, mac, &scanner, validTimeMs);
+            }
         }
     }
 }

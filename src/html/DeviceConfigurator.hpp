@@ -27,7 +27,7 @@ namespace Html {
         #define TAG_SCAN_TIME       "BLES_TIME"
         #define TAG_VALID_TIME      "BLES_VALID"
 
-        size_t maxCount = 16;
+        const size_t maxCount = 16;
 
         OnSaveCb_t cb = nullptr;
 
@@ -256,26 +256,30 @@ namespace Html {
                 cb();
         }
 
-        uint8_t getSensorsCount() {
+        uint8_t getDeviceCount()
+        {
             auto cfg = Supla::Storage::ConfigInstance();
             uint8_t count = 0;
             cfg->getUInt8(TAG_COUNT_SELECTOR, &count);
             return count;
         }
 
-        String getMAC(size_t idx) {
+        String getMAC(size_t idx)
+        {
             if (idx > maxCount)
+            {
                 return "";
+            }
+
             auto cfg = Supla::Storage::ConfigInstance();
 
             char tag[32];
             snprintf(tag, 32, "MAC%u", idx);
 
             char val[32];
-
             cfg->getString(tag, val, 32);
 
-            return String(val);
+            return val;
         }
 
         bool isType(BLE_Sensor::Type type, uint8_t devNum) { return BLE_Sensor_Factory::IsType(devNum + 1, type); }

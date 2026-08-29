@@ -49,7 +49,8 @@ Open a browser and go to 192.168.4.1. Configure your Wi-Fi network and Supla Clo
 Select how many devices the gateway should handle, enter their BLE addresses, and choose which sensor types should be generated in Supla.
 Save the configuration and test the setup. 😊
 
-![Configuration Screen](https://github.com/TheMechanos/BLE2Supla/blob/main/img/Config.png?raw=true)
+![Configuration Screen](./img/Config.png?raw=true)
+![Configuration Screen](./img/Scanner.png?raw=true)
 
 
 ## Changelog

@@ -54,6 +54,12 @@ void ScannerResults::addResult(JsonObject data)
         *infoPtr++ = 'B';
     }
 
+    // if data cannot be decrypted
+    if ((infoPtr == newEntry.info) && data["encr"].is<bool>() && data["encr"].as<bool>())
+    {
+        strcpy(infoPtr, "\xf0\x9f\x94\x92");
+    }
+
     std::lock_guard<std::mutex> lck(_entries_mtx);
     const auto it = std::find_if(_entries.begin(), _entries.end(), [&newEntry](const Entry &entry)
         {
@@ -81,42 +87,47 @@ void snprintfSafeHtmlStr(char *out, size_t outSize, const char *in)
     outSize--;
     for (; *in && outSize; in++)
     {
+        const char *subst = nullptr;
         switch (*in)
         {
             case '\'':
-                strncpy(out, "&apos;", outSize);
-                outSize += 6;
-                out += 6;
+                subst = "&apos;";
                 break;
 
             case '"':
-                strncpy(out, "&quot;", outSize);
-                outSize += 6;
-                out += 6;
+                subst = "&quot;";
                 break;
 
             case '<':
-                strncpy(out, "&lt;", outSize);
-                outSize += 4;
-                out += 4;
+                subst = "&lt;";
                 break;
 
             case '>':
-                strncpy(out, "&gt;", outSize);
-                outSize += 4;
-                out += 4;
+                subst = "&gt;";
                 break;
 
             case '&':
-                strncpy(out, "&amp;", outSize);
-                outSize += 5;
-                out += 5;
+                subst = "&amp;";
                 break;
 
             default:
                 *out = *in;
-                out++;
                 outSize--;
+                out++;
+                break;
+        }
+
+        if (subst)
+        {
+            size_t len = strlen(subst);
+            if (len > outSize)
+            {
+                // no place in out buffer
+                break;
+            }
+            strcpy(out, subst);
+            outSize -= len;
+            out += len;
         }
     }
 

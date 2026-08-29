@@ -22,26 +22,27 @@ public:
     };
 
 
-    BLE_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs, Supla::Channel* suplaChannel)
-        : validTimeMs(validTimeMs)
-        , lastReceiveTime(0)
-        , suplaChannel(suplaChannel) {
-
-
-
+    BLE_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs, Supla::Channel* suplaChannel):
+        validTimeMs(validTimeMs),
+        lastReceiveTime(0),
+        lastValid(true),
+        suplaChannel(suplaChannel)
+    {
         scanner->addSensor(mac, [this, suplaChannel](String MAC, JsonObject data) {
             // serializeJson(data, Serial);
 
             lastReceiveTime = millis();
             this->suplaChannel->setStateOnline();
 
-            if (data["batt"].is<double>()) {
+            if (data["batt"].is<double>())
+            {
                 suplaChannel->setBatteryPowered(true);
                 suplaChannel->setBatteryLevel(data["batt"].as<uint8_t>());
                 // printf("MAC: %s BAT: %u%%\n", MAC.c_str(), data["batt"].as<uint8_t>());
             }
 
-            if (data["rssi"].is<int>()) {
+            if (data["rssi"].is<int>())
+            {
                 int32_t rssi = map(data["rssi"].as<int>(), BLE_RSSI_MIN, BLE_RSSI_MAX, 0, 100);
                 if (rssi >= 0 && rssi <= 100)
                     suplaChannel->setBridgeSignalStrength(rssi);
@@ -60,14 +61,16 @@ protected:
 
     void init() { suplaChannel->setStateOnlineAndNotAvailable(); }
 
-    void iterate() {
-        static bool lastValid = true;
+    void iterate()
+    {
         bool valid = isValid();
 
-        if (valid != lastValid) {
+        if (valid != lastValid)
+        {
             lastValid = valid;
 
-            if (!valid) {
+            if (!valid)
+            {
                 onInvalidTime();
                 suplaChannel->setStateOnlineAndNotAvailable();
             }
@@ -79,8 +82,9 @@ protected:
     virtual void onData(const String &MAC, JsonObject data) = 0;
 
 private:
-    uint32_t validTimeMs;
+    const uint32_t validTimeMs;
     uint32_t lastReceiveTime;
+    bool lastValid;
     Supla::Channel* suplaChannel;
 
 };

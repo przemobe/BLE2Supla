@@ -19,7 +19,10 @@ public:
 
 
 private:
-    virtual void onData(const String &MAC, JsonObject data) {
+    virtual void onData(const String &MAC, JsonObject data)
+    {
+        bool noTemp = false;
+
         if (data["tempc"].is<double>())
         {
             temp = data["tempc"].as<double>();
@@ -31,7 +34,7 @@ private:
         }
         else
         {
-            temp = TEMPERATURE_NOT_AVAILABLE;
+            noTemp = true;
         }
 
         if (data["hum"].is<double>())
@@ -43,9 +46,9 @@ private:
         {
             humi = data["_hum"].as<double>();
         }
-        else
+        else if (noTemp)
         {
-            humi = HUMIDITY_NOT_AVAILABLE;
+            return;
         }
 
         printf("TH SENSOR '%s' -> %0.1f°C  %0.0f%%\n", MAC.c_str(), temp, humi);
@@ -53,7 +56,8 @@ private:
         sendNewValue();
     }
 
-    virtual void onInvalidTime() {
+    virtual void onInvalidTime()
+    {
         temp = TEMPERATURE_NOT_AVAILABLE;
         humi = HUMIDITY_NOT_AVAILABLE;
         sendNewValue();

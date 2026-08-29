@@ -15,7 +15,7 @@ extern "C" {
 
 // About detailed definitions of the struct in See https://bthome.io/format/
 
-const static uint16_t BTHOME_UUID = 0xfcd2;
+extern const uint16_t BTHOME_UUID;
 
 /**
  * @brief bthome handle type
@@ -298,6 +298,18 @@ uint8_t bthome_payload_adv_add_evt_data(uint8_t *buffer, uint8_t offset, bthome_
  *          NULL if the parsing fails
  */
 bthome_reports_t *bthome_parse_adv_data(bthome_handle_t handle, const uint8_t *adv, uint8_t len);
+
+/**
+ * @brief Parse the BTHome service data
+ *
+ * @param handle bthome handle
+ * @param data pointer to the service data
+ * @param len length of the service data
+ * @return bthome_reports_t *
+ *          pointer to the reports structure
+ *          NULL if the parsing fails
+ */
+bthome_reports_t *bthome_parse_service_data(bthome_handle_t handle, const uint8_t *data, uint8_t len);
 
 /**
  * @brief Create a BTHome advertisement data
