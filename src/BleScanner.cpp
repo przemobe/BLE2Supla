@@ -30,11 +30,18 @@ BleScanner::BleScanner():
 
 void BleScanner::init() {
     pBLEScan = NimBLEDevice::getScan(); // create new scan
-    pBLEScan->setScanCallbacks(this, false);
-    pBLEScan->setActiveScan(true);
-    pBLEScan->setInterval(97);
-    pBLEScan->setWindow(37);
-    pBLEScan->setMaxResults(0);
+    if (pBLEScan)
+    {
+        pBLEScan->setScanCallbacks(this, false);
+        pBLEScan->setActiveScan(true);
+        pBLEScan->setInterval(97);
+        pBLEScan->setWindow(37);
+        pBLEScan->setMaxResults(0);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "NimBLEDevice::getScan() failed!");
+    }
 }
 
 
@@ -118,10 +125,10 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
     printf("[BLE] payload(%u)=%s\n", payload.size(), hexifyString({(const char*)payload.data(), payload.size()}).c_str());
 #endif
 
-    String mac_adress = advertisedDevice->getAddress().toString().c_str();
-    mac_adress.toUpperCase();
+    String mac_address = advertisedDevice->getAddress().toString().c_str();
+    mac_address.toUpperCase();
 
-    BLEdata["id"] = (char*)mac_adress.c_str();
+    BLEdata["id"] = (char*)mac_address.c_str();
     BLEdata["rssi"] = (int)advertisedDevice->getRSSI();
 
     if (advertisedDevice->haveName())
@@ -158,7 +165,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 #endif
 
         gScannerResults.addResult(BLEdata);
-        callSensors(mac_adress, BLEdata);
+        callSensors(mac_address, BLEdata);
     }
     else if (serviceDataCount &&
         (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_XMIBEACON) &&
@@ -172,7 +179,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 #endif
 
         gScannerResults.addResult(BLEdata);
-        callSensors(mac_adress, BLEdata);
+        callSensors(mac_address, BLEdata);
     }
     else if (decoder.decodeBLEJson(BLEdata))
     {
@@ -193,7 +200,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata.remove("track");
 
         gScannerResults.addResult(BLEdata);
-        callSensors(mac_adress, BLEdata);
+        callSensors(mac_address, BLEdata);
     }
     else
     {
@@ -289,7 +296,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
             hexifyString({(const char*)report.data, report.len}).c_str());
 #endif
 
-        // BTHome data is LE, assume system is also LE so conversion can be skipped.
+        // BTHome data is Little Endian
         switch (report.id)
         {
             case BTHOME_SENSOR_ID_BATTERY:
@@ -300,13 +307,15 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X01:
             {
-                addResultValue(BLEdata, "tempc", *((int16_t*)report.data) * 0.01d);
+                uint16_t u16val = report.data[0] | (report.data[1] << 8);
+                addResultValue(BLEdata, "tempc", static_cast<int16_t>(u16val) * 0.01d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X10:
             {
-                addResultValue(BLEdata, "tempc", *((int16_t*)report.data) * 0.1d);
+                uint16_t u16val = report.data[0] | (report.data[1] << 8);
+                addResultValue(BLEdata, "tempc", static_cast<int16_t>(u16val) * 0.1d);
                 break;
             }
 
@@ -324,7 +333,8 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
 
             case BTHOME_SENSOR_ID_HUMIDITY_0X01:
             {
-                addResultValue(BLEdata, "hum", *((uint16_t*)report.data) * 0.01d);
+                uint16_t u16val = report.data[0] | (report.data[1] << 8);
+                addResultValue(BLEdata, "hum", u16val * 0.01d);
                 break;
             }
 
@@ -462,7 +472,8 @@ bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevic
             case 0x4c01:
             {
                 // Temperature
-                float fval = *reinterpret_cast<const float*>(dataPointer + index);
+                float fval;
+                memcpy(&fval, dataPointer + index, sizeof(fval));
 #ifdef APP_DEBUG
                 printf("[XMI] 0x4c01 Temperature: %.2f °C\n", fval);
 #endif
@@ -493,11 +504,12 @@ bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevic
             case 0x4c08:
             {
                 // Humidity
-                float fval = *reinterpret_cast<const float*>(dataPointer + index);
+                float fval;
+                memcpy(&fval, dataPointer + index, sizeof(fval));
 #ifdef APP_DEBUG
-                printf("[XMI] 0x4c08 Humidity: %.2f %%\n", fval * 1.0d);
+                printf("[XMI] 0x4c08 Humidity: %.2f %%\n", fval);
 #endif
-                addResultValue(BLEdata, "hum", fval);
+                addResultValue(BLEdata, "hum", fval * 1.0d);
                 reportCnt++;
                 break;
             }
