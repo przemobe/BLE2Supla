@@ -104,17 +104,24 @@ void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
 }
 
 
-String BleScanner::hexifyString(const std::string &deviceServiceData) {
-    String hexString = "";
-    for (unsigned int i = 0; i < deviceServiceData.length(); i++) {
-        byte b = deviceServiceData[i];
-        if (b < 0x10)
-            hexString += "0";
+String BleScanner::hexifyString(const std::string &data)
+{
+    static const char hexChars[] = "0123456789ABCDEF";
+    const size_t dataLength = data.length();
 
-        hexString += String(b, HEX);
+    String hexString;
+    hexString.reserve(dataLength * 2 + 1);
+
+    for (size_t i = 0; i < dataLength; i++)
+    {
+        uint8_t b = data[i];
+        hexString += hexChars[b >> 4];
+        hexString += hexChars[0x0F & b];
     }
+
     return hexString;
 }
+
 
 void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
 
