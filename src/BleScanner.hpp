@@ -7,8 +7,9 @@
 
 #include <NimBLEDevice.h>
 #include <decoder.h>
-#include "bthome_v2.h"
+#include <string_view>
 
+#include "bthome_v2.h"
 #include "MAC.hpp"
 #include "config.hpp"
 
@@ -45,7 +46,7 @@ private:
     Callback_t sensorsID[MAX_SENSORS];
 
 
-    static String hexifyString(const std::string &deviceServiceData);
+    static String hexifyString(const std::string_view &data);
     bool decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice);
     bool decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice);
 

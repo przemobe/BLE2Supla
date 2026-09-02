@@ -104,7 +104,7 @@ void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
 }
 
 
-String BleScanner::hexifyString(const std::string &data)
+String BleScanner::hexifyString(const std::string_view &data)
 {
     static const char hexChars[] = "0123456789abcdef";
     const size_t dataLength = data.length();
