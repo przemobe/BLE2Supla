@@ -204,6 +204,7 @@ namespace Html {
             for (size_t q = 0; q < maxCount; q++)
             {
                 snprintf(cfgKey, sizeof(cfgKey), "MAC%u", q);
+                cfgVal[0] = 0;
                 cfg->getString(cfgKey, cfgVal, sizeof(cfgVal));
 
                 snprintf(toSend, sizeof(toSend), bledevHtmlTemplate,
@@ -212,6 +213,7 @@ namespace Html {
                 sender->send(toSend);
 
                 snprintf(cfgKey, sizeof(cfgKey), "BKEY%u", q);
+                cfgVal[0] = 0;
                 bool bkey = cfg->getString(cfgKey, cfgVal, sizeof(cfgVal));
                 if ((false == bkey) || (32 != strlen(cfgVal)))
                 {
