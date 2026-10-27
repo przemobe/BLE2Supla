@@ -55,5 +55,4 @@ Save the configuration and test the setup. 😊
 
 ## Changelog
 
-### V1.0.1
--Add debug mode to list all decoded BLE Devices to log
+Refer to: [releases](https://github.com/przemobe/BLE2Supla/releases).
