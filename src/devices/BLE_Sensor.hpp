@@ -59,7 +59,7 @@ public:
 protected:
     bool isValid() { return millis() - lastReceiveTime < validTimeMs; }
 
-    void init() { suplaChannel->setStateOnlineAndNotAvailable(); }
+    void init() { suplaChannel->setStateOfflineRemoteWakeupNotSupported(); }
 
     void iterate()
     {
@@ -72,7 +72,7 @@ protected:
             if (!valid)
             {
                 onInvalidTime();
-                suplaChannel->setStateOnlineAndNotAvailable();
+                suplaChannel->setStateOfflineRemoteWakeupNotSupported();
             }
         }
     }
