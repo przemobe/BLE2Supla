@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include <HTTPUpdateServer.h>
+#include <supla/version.h>
 #include "html/ScannerResults.hpp"
 
 
@@ -26,6 +27,9 @@ void setup() {
     cfgButton.configureAsConfigButton(&SuplaDevice);
 
     SuplaDevice.setName(DEVICE_NAME);
+#ifdef PLATFORM_NAME
+    SuplaDevice.setSwVersion(PLATFORM_NAME "-" SUPLA_SHORT_VERSION "-" __DATE__);
+#endif
 
     SuplaDevice.setSuplaCACert(suplaCACert);
     SuplaDevice.setSupla3rdPartyCACert(supla3rdCACert);
