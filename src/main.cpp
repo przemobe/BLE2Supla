@@ -4,6 +4,7 @@
 #include "BleScanner.hpp"
 #include "devices/BLE_Sensor_Factory.hpp"
 #include "html/DeviceConfigurator.hpp"
+#include "html/BoardConfigHtml.hpp"
 #include "html/ScannerResults.hpp"
 
 
@@ -11,7 +12,6 @@ constexpr static const char* TAG = "BLE2SUPLA";
 
 Supla::ESPWifi wifi;
 Supla::LittleFsConfig configSupla(1024 * 10);
-Supla::Device::StatusLed statusLed(GPIO_LED_NUM, GPIO_LED_INV); // inverted state
 Supla::Control::Button cfgButton(GPIO_CFG_NUM, GPIO_CFG_PULL, GPIO_CFG_INVERT);
 Supla::EspWebServer suplaServer;
 Supla::Html::DeviceConfigurator* bleCfg = nullptr;
@@ -32,6 +32,7 @@ void setup() {
     scanner.init();
 
     cfgButton.configureAsConfigButton(&SuplaDevice);
+    BoardConfigHtml::makeSuplaStatusLed();
 
     SuplaDevice.setName(DEVICE_NAME);
 #ifdef PLATFORM_NAME
@@ -71,6 +72,7 @@ void initHtml() {
     new Supla::Html::WifiParameters;
     new Supla::Html::ProtocolParameters;
     new Supla::Html::StatusLedParameters;
+    new BoardConfigHtml;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
     if (nullptr == bleCfg)
