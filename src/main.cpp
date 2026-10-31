@@ -1,9 +1,22 @@
 #include "main.hpp"
 #include <HTTPUpdateServer.h>
 #include <supla/version.h>
+#include "BleScanner.hpp"
+#include "devices/BLE_Sensor_Factory.hpp"
+#include "html/DeviceConfigurator.hpp"
 #include "html/ScannerResults.hpp"
 
 
+constexpr static const char* TAG = "BLE2SUPLA";
+
+Supla::ESPWifi wifi;
+Supla::LittleFsConfig configSupla(1024 * 10);
+Supla::Device::StatusLed statusLed(GPIO_LED_NUM, GPIO_LED_INV); // inverted state
+Supla::Control::Button cfgButton(GPIO_CFG_NUM, GPIO_CFG_PULL, GPIO_CFG_INVERT);
+Supla::EspWebServer suplaServer;
+Supla::Html::DeviceConfigurator* bleCfg = nullptr;
+
+BleScanner scanner;
 HTTPUpdateServer gHTTPUpdateServer;
 ScannerResults gScannerResults;
 
@@ -17,12 +30,6 @@ void setup() {
     NimBLEDevice::init(DEVICE_NAME);
 
     scanner.init();
-
-    // scanner.addSensor("A4:C1:38:??:??:??", [](String MAC, JsonObject data) {
-    //     serializeJson(data, Serial);
-    //     Serial.println("");
-    // });
-
 
     cfgButton.configureAsConfigButton(&SuplaDevice);
 
@@ -66,6 +73,11 @@ void initHtml() {
     new Supla::Html::StatusLedParameters;
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
+    if (nullptr == bleCfg)
+    {
+        ESP_LOGE(TAG, "DeviceConfigurator create fail");
+        return;
+    }
     new ScanResultsHtml(gScannerResults);
 
     const uint8_t deviceCount = bleCfg->getDeviceCount();
@@ -115,11 +127,11 @@ void initHtml() {
     {
         printf("MAC: %s\n", bleCfg->getMAC(devIdx).c_str());
 
-        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
+        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor_Factory::Type::COUNT; w++)
         {
-            if (bleCfg->isType((BLE_Sensor::Type)w, devIdx))
+            if (bleCfg->isType((BLE_Sensor_Factory::Type)w, devIdx))
             {
-                printf("    - %s\n", BLE_Sensor::TYPE_LABEL[w]);
+                printf("    - %s\n", BLE_Sensor_Factory::TYPE_LABEL[w]);
             }
         }
 
@@ -133,12 +145,18 @@ void initHtml() {
     {
         String mac = bleCfg->getMAC(devIdx);
 
-        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
+        for (uint8_t w = 0; w < (uint8_t)BLE_Sensor_Factory::Type::COUNT; w++)
         {
-            BLE_Sensor::Type type = (BLE_Sensor::Type)w;
+            BLE_Sensor_Factory::Type type = (BLE_Sensor_Factory::Type)w;
             if (bleCfg->isType(type, devIdx))
             {
-                BLE_Sensor_Factory::CreateSensor(type, mac, &scanner, validTimeMs);
+                BLE_Sensor *pSensor = BLE_Sensor_Factory::CreateSensor(type, validTimeMs);
+                if (nullptr == pSensor)
+                {
+                    ESP_LOGE(TAG, "BLE_Sensor_Factory::CreateSensor type=%u mac=%s fail", type, mac.c_str());
+                    continue;
+                }
+                scanner.addSensor(mac, pSensor);
             }
         }
     }

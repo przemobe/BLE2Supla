@@ -1,10 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
-#include <BleScanner.hpp>
 
 #include <config.hpp>
-
 
 #include <SuplaDevice.h>
 
@@ -32,24 +30,6 @@
 
 #include <supla/storage/eeprom.h>
 #include <supla/storage/littlefs_config.h>
-
-
-#include <devices/BLE_Sensor_Factory.hpp>
-#include <html/DeviceConfigurator.hpp>
-
-
-Supla::ESPWifi wifi;
-// Supla::Eeprom eeprom;
-Supla::LittleFsConfig configSupla(1024 * 10);
-
-Supla::Device::StatusLed statusLed(GPIO_LED_NUM, GPIO_LED_INV); // inverted state
-Supla::Control::Button cfgButton(GPIO_CFG_NUM, GPIO_CFG_PULL, GPIO_CFG_INVERT);
-
-Supla::EspWebServer suplaServer;
-
-Supla::Html::DeviceConfigurator* bleCfg;
-BleScanner scanner;
-
 
 
 void initHtml();

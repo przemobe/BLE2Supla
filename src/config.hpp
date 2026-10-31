@@ -8,9 +8,12 @@
 #define BLE_RSSI_MIN -110
 #define BLE_RSSI_MAX -35
 
-
-#define GPIO_LED_NUM 2
-#define GPIO_LED_INV false
+#ifndef GPIO_LED_NUM
+    #define GPIO_LED_NUM 2
+#endif
+#ifndef GPIO_LED_INV
+    #define GPIO_LED_INV false
+#endif
 
 #define GPIO_CFG_NUM 0
 #define GPIO_CFG_PULL true

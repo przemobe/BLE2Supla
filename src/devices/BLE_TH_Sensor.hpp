@@ -12,11 +12,11 @@
 
 class BLE_TH_Sensor : public Supla::Sensor::ThermHygroMeter, public BLE_Sensor {
 public:
-    BLE_TH_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
-        : BLE_Sensor(mac, scanner, validTimeMs, &channel)
-        , temp(TEMPERATURE_NOT_AVAILABLE)
-        , humi(HUMIDITY_NOT_AVAILABLE) { }
-
+    BLE_TH_Sensor(uint32_t validTimeMs):
+        BLE_Sensor(validTimeMs, channel),
+        temp(TEMPERATURE_NOT_AVAILABLE),
+        humi(HUMIDITY_NOT_AVAILABLE)
+    {}
 
 private:
     virtual void onData(const String &MAC, JsonObject data)

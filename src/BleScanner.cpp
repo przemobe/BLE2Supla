@@ -1,4 +1,5 @@
 #include "BleScanner.hpp"
+#include "devices/BLE_Sensor.hpp"
 #include "html/ScannerResults.hpp"
 #include "XMiBeacon.hpp"
 
@@ -15,9 +16,10 @@ BleScanner::BleScanner():
     scanTimeMillis(5 * 1000),
     scanIntervalMillis(10 * 1000)
 {
-    for (size_t q = 0; q < MAX_SENSORS; q++) {
-        sensorsID[q].cb = nullptr;
-        sensorsID[q].ID.clear();
+    for (SensorId &rSensorId : sensorsID)
+    {
+        rSensorId.pSensor = nullptr;
+        rSensorId.ID.clear();
     }
 
     for (MacBleKey &rMacBleKey : macBleKeys)
@@ -67,18 +69,22 @@ void BleScanner::setScanTiming(unsigned long scanTimeMillis, unsigned long scanI
 }
 
 
-void BleScanner::addSensor(String ID, CallbackFun_t cb) {
+void BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
+{
     ID.toUpperCase();
 
-    if (!MAC::isValid(ID)) {
+    if (!MAC::isValid(ID))
+    {
         ESP_LOGE(TAG, "Can't register new mac, bad format! = \'%s\'", ID.c_str());
         return;
     }
 
-    for (size_t q = 0; q < MAX_SENSORS; q++) {
-        if (sensorsID[q].cb == nullptr) {
-            sensorsID[q].cb = cb;
-            sensorsID[q].ID = ID.c_str();
+    for (SensorId &rSensorId : sensorsID)
+    {
+        if (nullptr == rSensorId.pSensor)
+        {
+            rSensorId.pSensor = pSensor;
+            rSensorId.ID = ID.c_str();
             return;
         }
     }
@@ -88,17 +94,16 @@ void BleScanner::addSensor(String ID, CallbackFun_t cb) {
 
 void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
 {
-    for (size_t q = 0; q < MAX_SENSORS; q++)
+    for (SensorId &rSensorId : sensorsID)
     {
-        if (sensorsID[q].ID.length() == 0)
-            continue;
-
-        if (MAC::compare(ID, sensorsID[q].ID))
+        if ((rSensorId.ID.length() == 0) || (nullptr == rSensorId.pSensor))
         {
-            if (sensorsID[q].cb != nullptr)
-            {
-                sensorsID[q].cb(sensorsID[q].ID, BLEdata);
-            }
+            continue;
+        }
+
+        if (MAC::compare(ID, rSensorId.ID))
+        {
+            rSensorId.pSensor->procData(rSensorId.ID, BLEdata);
         }
     }
 }

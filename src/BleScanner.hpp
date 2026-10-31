@@ -14,17 +14,19 @@
 #include "config.hpp"
 
 
-class BleScanner : public NimBLEScanCallbacks {
-public:
-    typedef std::function<void(String MAC, JsonObject data)> CallbackFun_t;
+class BLE_Sensor;
 
+
+class BleScanner : public NimBLEScanCallbacks
+{
+public:
     BleScanner();
 
     void init();
     void iterate();
 
-    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
-    void addSensor(String MAC, CallbackFun_t cb);
+    void onResult(const NimBLEAdvertisedDevice *advertisedDevice) override;
+    void addSensor(String ID, BLE_Sensor *pSensor);
     void callSensors(const String &ID, JsonObject BLEdata);
 
     void setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis);
@@ -35,15 +37,15 @@ public:
 
 private:
     constexpr static const char* TAG = "BleScanner";
-    constexpr static const size_t MAX_SENSORS = MAX_SENSORS_COUNT;
     static const NimBLEUUID NIM_BLEUUID_BTHOME;
     static const NimBLEUUID NIM_BLEUUID_XMIBEACON;
 
-    struct Callback_t {
-        CallbackFun_t cb;
+    struct SensorId
+    {
+        BLE_Sensor* pSensor;
         String ID;
     };
-    Callback_t sensorsID[MAX_SENSORS];
+    SensorId sensorsID[MAX_SENSORS_COUNT];
 
 
     static String hexifyString(const std::string_view &data);

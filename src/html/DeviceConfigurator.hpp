@@ -12,7 +12,7 @@
 #include <supla/storage/config.h>
 #include <supla/storage/storage.h>
 
-#include <devices/BLE_Sensor_Factory.hpp>
+#include "devices/BLE_Sensor_Factory.hpp"
 
 namespace Supla {
 namespace Html {
@@ -224,9 +224,9 @@ namespace Html {
                     cfgKey, cfgKey, cfgKey, cfgVal);
                 sender->send(toSend);
 
-                for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
+                for (uint8_t w = 0; w < (uint8_t)BLE_Sensor_Factory::Type::COUNT; w++)
                 {
-                    BLE_Sensor_Factory::SendFunctionCheckbox(sender, q + 1, (BLE_Sensor::Type)w);
+                    BLE_Sensor_Factory::SendFunctionCheckbox(sender, q + 1, (BLE_Sensor_Factory::Type)w);
                 }
             }
             sender->send("</div>"); // BOX
@@ -280,8 +280,8 @@ namespace Html {
                     return true;
                 }
 
-                for (uint8_t w = 0; w < (uint8_t)BLE_Sensor::Type::COUNT; w++)
-                    if (BLE_Sensor_Factory::HandleResponse(q + 1, (BLE_Sensor::Type)w, key, value))
+                for (uint8_t w = 0; w < (uint8_t)BLE_Sensor_Factory::Type::COUNT; w++)
+                    if (BLE_Sensor_Factory::HandleResponse(q + 1, (BLE_Sensor_Factory::Type)w, key, value))
                         return true;
             }
 
@@ -376,7 +376,7 @@ namespace Html {
             return true;
         }
 
-        bool isType(BLE_Sensor::Type type, uint8_t devNum) { return BLE_Sensor_Factory::IsType(devNum + 1, type); }
+        bool isType(BLE_Sensor_Factory::Type type, uint8_t devNum) { return BLE_Sensor_Factory::IsType(devNum + 1, type); }
 
     }; // DeviceConfigurator
 

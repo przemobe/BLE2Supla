@@ -3,38 +3,62 @@
 #include <supla/network/web_sender.h>
 #include <supla/storage/config.h>
 
-#include <devices/BLE_H_Sensor.hpp>
 #include <devices/BLE_Sensor.hpp>
+#include <devices/BLE_H_Sensor.hpp>
 #include <devices/BLE_TH_Sensor.hpp>
 #include <devices/BLE_T_Sensor.hpp>
 #include <devices/BLE_Open_Sensor.hpp>
 
-class BLE_Sensor_Factory {
+class BLE_Sensor_Factory
+{
 public:
-    static BLE_Sensor* CreateSensor(BLE_Sensor::Type type, String mac, BleScanner* scanner, uint32_t validTimeMs) {
+    enum Type { TermoAndHum, Thermo, Humidity, Open, COUNT };
 
-        switch (type) {
-        case BLE_Sensor::Type::TermoAndHum:
-            return new BLE_TH_Sensor(mac, scanner, validTimeMs);
+    inline static const char* TYPE_CODES[Type::COUNT] =
+    {
+        [Type::TermoAndHum] = "BLET_TH",
+        [Type::Thermo] = "BLET_T",
+        [Type::Humidity] = "BLET_H",
+        [Type::Open] = "BLET_OPEN",
+    };
 
-        case BLE_Sensor::Type::Thermo:
-            return new BLE_T_Sensor(mac, scanner, validTimeMs);
+    inline static const char* TYPE_LABEL[Type::COUNT] =
+    {
+        [Type::TermoAndHum] = "Temperatura & Wilgotność",
+        [Type::Thermo] = "Temperatura",
+        [Type::Humidity] = "Wilgotność",
+        [Type::Open] = "Czujnik Otwarcia",
+    };
 
-        case BLE_Sensor::Type::Humidity:
-            return new BLE_H_Sensor(mac, scanner, validTimeMs);
+    static BLE_Sensor* CreateSensor(Type type, uint32_t validTimeMs)
+    {
+        switch (type)
+        {
+            case Type::TermoAndHum:
+                return new BLE_TH_Sensor(validTimeMs);
 
-        case BLE_Sensor::Type::Open:
-            return new BLE_Open_Sensor(mac, scanner, validTimeMs);
+            case Type::Thermo:
+                return new BLE_T_Sensor(validTimeMs);
+
+            case Type::Humidity:
+                return new BLE_H_Sensor(validTimeMs);
+
+            case Type::Open:
+                return new BLE_Open_Sensor(validTimeMs);
+
+            default:
+                break;
         }
 
         return nullptr;
     }
 
-    static void SendFunctionCheckbox(Supla::WebSender* sender, uint8_t devNum, BLE_Sensor::Type type) {
+    static void SendFunctionCheckbox(Supla::WebSender* sender, uint8_t devNum, Type type)
+    {
         auto cfg = Supla::Storage::ConfigInstance();
 
         char tag[32];
-        snprintf(tag, 32, "%s%u", BLE_Sensor::TYPE_CODES[type], devNum);
+        snprintf(tag, 32, "%s%u", TYPE_CODES[type], devNum);
 
         uint8_t checkedVal = 0;
         cfg->getUInt8(tag, &checkedVal);
@@ -53,7 +77,7 @@ public:
 
         char toSend[512];
         int status = snprintf(toSend, sizeof(toSend), htmlTemplate,
-            tag, BLE_Sensor::TYPE_LABEL[(uint8_t)type],
+            tag, TYPE_LABEL[(uint8_t)type],
             tag, checkedVal ? "on" : "off",
             tag, checkedVal ? " checked" : "", tag);
 
@@ -65,11 +89,12 @@ public:
         sender->send(toSend);
     }
 
-    static bool HandleResponse(uint8_t devNum, BLE_Sensor::Type type, const char* key, const char* value) {
+    static bool HandleResponse(uint8_t devNum, Type type, const char* key, const char* value)
+    {
         auto cfg = Supla::Storage::ConfigInstance();
 
         char tag[32];
-        snprintf(tag, 32, "%s%u", BLE_Sensor::TYPE_CODES[type], devNum);
+        snprintf(tag, 32, "%s%u", TYPE_CODES[type], devNum);
 
         if (strcmp(key, tag) == 0) {
             if (strcmp(value, "on") == 0)
@@ -81,11 +106,12 @@ public:
         return false;
     }
 
-    static bool IsType(uint8_t devNum, BLE_Sensor::Type type) {
+    static bool IsType(uint8_t devNum, Type type)
+    {
         auto cfg = Supla::Storage::ConfigInstance();
 
         char tag[32];
-        snprintf(tag, 32, "%s%u", BLE_Sensor::TYPE_CODES[type], devNum);
+        snprintf(tag, 32, "%s%u", TYPE_CODES[type], devNum);
 
         uint8_t checkedVal = 0;
         cfg->getUInt8(tag, &checkedVal);

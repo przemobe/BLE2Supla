@@ -12,9 +12,10 @@
 
 class BLE_Open_Sensor : public Supla::Sensor::BinaryBase, public BLE_Sensor {
 public:
-    BLE_Open_Sensor(const String &mac, BleScanner* scanner, uint32_t validTimeMs)
-        : BLE_Sensor(mac, scanner, validTimeMs, &channel)
-        , open(false) { }
+    BLE_Open_Sensor(uint32_t validTimeMs):
+        BLE_Sensor(validTimeMs, channel),
+        open(false)
+    {}
 
 private:
     virtual void onData(const String &MAC, JsonObject data) {
