@@ -12,6 +12,9 @@ public:
         suplaChannel(rSuplaChannel)
     {}
 
+    virtual ~BLE_Sensor()
+    {}
+
     void procData(const String &MAC, JsonObject data)
     {
         lastReceiveTime = millis();
