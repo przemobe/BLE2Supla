@@ -31,6 +31,8 @@ void setup() {
 
     scanner.init();
 
+    Supla::Storage::Init();
+
     cfgButton.configureAsConfigButton(&SuplaDevice);
     BoardConfigHtml::makeSuplaStatusLed();
 
@@ -65,9 +67,8 @@ void loop() {
 }
 
 
-void initHtml() {
-    Supla::Storage::Init();
-
+void initHtml()
+{
     new Supla::Html::DeviceInfo(&SuplaDevice);
     new Supla::Html::WifiParameters;
     new Supla::Html::ProtocolParameters;
