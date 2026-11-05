@@ -12,7 +12,7 @@
     #define GPIO_LED_NUM 2
 #endif
 #ifndef GPIO_LED_MODE
-    #define GPIO_LED_MODE 1
+    #define GPIO_LED_MODE 0
 #endif
 
 #define GPIO_CFG_NUM 0
