@@ -11,8 +11,8 @@
 #ifndef GPIO_LED_NUM
     #define GPIO_LED_NUM 2
 #endif
-#ifndef GPIO_LED_INV
-    #define GPIO_LED_INV false
+#ifndef GPIO_LED_MODE
+    #define GPIO_LED_MODE 1
 #endif
 
 #define GPIO_CFG_NUM 0
