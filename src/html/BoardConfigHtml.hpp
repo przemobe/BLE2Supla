@@ -5,7 +5,7 @@
 #include <supla/network/html_element.h>
 #include <supla/device/status_led.h>
 
-enum LedGpioMode
+enum LedGpioMode : uint8_t
 {
     LedGpioMode_NonInverted = 0,
     LedGpioMode_Inverted = 1,

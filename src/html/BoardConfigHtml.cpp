@@ -94,20 +94,18 @@ LedGpioMode BoardConfigHtml::getStatusLedGpioMode()
     if (cfg)
     {
         cfg->getUInt8(statusLedModeTag, &statusLedGpioModeValue);
+        statusLedGpioModeValue = std::min(statusLedGpioModeValue, static_cast<uint8_t>(LedGpioMode_COUNT - 1));
     }
     return static_cast<LedGpioMode>(statusLedGpioModeValue);
 }
 
 void BoardConfigHtml::send(Supla::WebSender* sender)
 {
+    // This section is intended to be part of "Additional Settings" (Supla::Html::StatusLedParameters)
+    // so there is no DIV and H3 tags.
+
     const uint8_t statusLedGpioValue = getStatusLedGpio();
     const LedGpioMode statusLedGpioModeValue = getStatusLedGpioMode();
-
-    /*
-    sender->send(
-        "<div class=\"box\">"
-            "<h3>Board Configuration</h3>");
-    */
 
     sender->formField([&]()
     {
@@ -135,11 +133,6 @@ void BoardConfigHtml::send(Supla::WebSender* sender)
             sender->selectOption(LedGpioMode_RGB_Blue, "WS2812 Blue", statusLedGpioModeValue == LedGpioMode_RGB_Blue);
         });
     });
-
-    /*
-    sender->send(
-        "</div>");
-    */
 }
 
 bool BoardConfigHtml::handleResponse(const char* key, const char* value)
@@ -153,20 +146,15 @@ bool BoardConfigHtml::handleResponse(const char* key, const char* value)
     if (strcmp(key, statusLedGpioTag) == 0)
     {
         // GPIO change needs restart to apply.
-        uint8_t newVal = static_cast<uint8_t>(stringToUInt(value));
+        const uint8_t newVal = static_cast<uint8_t>(stringToUInt(value));
         cfg->setUInt8(statusLedGpioTag, newVal);
         return true;
     }
 
     if (strcmp(key, statusLedModeTag) == 0)
     {
-        uint8_t newVal = static_cast<uint8_t>(stringToUInt(value));
-        if (LedGpioMode_COUNT <= newVal)
-        {
-            newVal = LedGpioMode_COUNT - 1;
-        }
-
-        uint8_t oldVal = GPIO_LED_NUM;
+        const uint8_t newVal = std::min(static_cast<uint8_t>(stringToUInt(value)), static_cast<uint8_t>(LedGpioMode_COUNT - 1));
+        uint8_t oldVal = static_cast<uint8_t>(GPIO_LED_MODE);
         cfg->getUInt8(statusLedModeTag, &oldVal);
         if (newVal != oldVal)
         {
