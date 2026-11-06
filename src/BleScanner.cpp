@@ -69,14 +69,14 @@ void BleScanner::setScanTiming(unsigned long scanTimeMillis, unsigned long scanI
 }
 
 
-void BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
+bool BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
 {
     ID.toUpperCase();
 
     if (!MAC::isValid(ID))
     {
         ESP_LOGE(TAG, "Can't register new mac, bad format! = \'%s\'", ID.c_str());
-        return;
+        return false;
     }
 
     for (SensorId &rSensorId : sensorsID)
@@ -85,10 +85,11 @@ void BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
         {
             rSensorId.pSensor = pSensor;
             rSensorId.ID = ID.c_str();
-            return;
+            return true;
         }
     }
     ESP_LOGE(TAG, "Can't register new mac, list is full!");
+    return false;
 }
 
 

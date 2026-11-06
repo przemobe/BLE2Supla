@@ -26,7 +26,7 @@ public:
     void iterate();
 
     void onResult(const NimBLEAdvertisedDevice *advertisedDevice) override;
-    void addSensor(String ID, BLE_Sensor *pSensor);
+    bool addSensor(String ID, BLE_Sensor *pSensor);
     void callSensors(const String &ID, JsonObject BLEdata);
 
     void setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis);

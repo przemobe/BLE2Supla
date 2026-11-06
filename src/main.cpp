@@ -165,7 +165,10 @@ void initHtml()
                     ESP_LOGE(TAG, "BLE_Sensor_Factory::CreateSensor type=%u mac=%s fail", type, mac.c_str());
                     continue;
                 }
-                scanner.addSensor(mac, pSensor);
+                if (false == scanner.addSensor(mac, pSensor))
+                {
+					delete pSensor;
+				}
             }
         }
     }
