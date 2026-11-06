@@ -1,6 +1,13 @@
 #include "main.hpp"
-#include <HTTPUpdateServer.h>
 #include <supla/version.h>
+#include <supla/network/html/button_config_parameters.h>
+#include <supla/network/html/button_update.h>
+#include <supla/network/html/custom_parameter.h>
+#include <supla/network/html/device_info.h>
+#include <supla/network/html/protocol_parameters.h>
+#include <supla/network/html/select_input_parameter.h>
+#include <supla/network/html/status_led_parameters.h>
+#include <supla/network/html/wifi_parameters.h>
 #include "BleScanner.hpp"
 #include "devices/BLE_Sensor_Factory.hpp"
 #include "html/DeviceConfigurator.hpp"
@@ -17,7 +24,6 @@ Supla::EspWebServer suplaServer;
 Supla::Html::DeviceConfigurator* bleCfg = nullptr;
 
 BleScanner scanner;
-HTTPUpdateServer gHTTPUpdateServer;
 ScannerResults gScannerResults;
 
 
@@ -46,7 +52,6 @@ void setup() {
     SuplaDevice.setInitialMode(Supla::InitialMode::StartInCfgMode);
 
     initHtml();
-    gHTTPUpdateServer.setup(suplaServer.getServerPtr(), "/update");
 
     SuplaDevice.begin();
 }
@@ -74,6 +79,7 @@ void initHtml()
     new Supla::Html::ProtocolParameters;
     new Supla::Html::StatusLedParameters;
     new BoardConfigHtml;
+    new Supla::Html::ButtonUpdate(&suplaServer);
 
     bleCfg = new Supla::Html::DeviceConfigurator(MAX_DEVICES_COUNT);
     if (nullptr == bleCfg)

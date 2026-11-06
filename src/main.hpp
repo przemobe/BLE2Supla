@@ -11,14 +11,6 @@
 #include <supla/network/esp_web_server.h>
 #include <supla/network/esp_wifi.h>
 
-#include <supla/network/html/button_config_parameters.h>
-#include <supla/network/html/custom_parameter.h>
-#include <supla/network/html/device_info.h>
-#include <supla/network/html/protocol_parameters.h>
-#include <supla/network/html/select_input_parameter.h>
-#include <supla/network/html/status_led_parameters.h>
-#include <supla/network/html/wifi_parameters.h>
-
 #include <supla/control/button.h>
 
 #include <supla/device/supla_ca_cert.h>
