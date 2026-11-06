@@ -167,8 +167,8 @@ void initHtml()
                 }
                 if (false == scanner.addSensor(mac, pSensor))
                 {
-					delete pSensor;
-				}
+                    delete pSensor;
+                }
             }
         }
     }
