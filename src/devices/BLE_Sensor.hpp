@@ -41,6 +41,16 @@ public:
         onData(MAC, data);
     }
 
+    void setSubDeviceId(uint8_t subDeviceId)
+    {
+        suplaChannel.setSubDeviceId(subDeviceId);
+    }
+
+    uint8_t getSubDeviceId() const
+    {
+        return suplaChannel.getSubDeviceId();
+    }
+
 protected:
     bool isValid() const { return millis() - lastReceiveTime < validTimeMs; }
 

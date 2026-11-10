@@ -11,6 +11,7 @@
 #include <supla/network/web_sender.h>
 #include <supla/storage/config.h>
 #include <supla/storage/storage.h>
+#include <supla/tools.h>
 
 #include "devices/BLE_Sensor_Factory.hpp"
 

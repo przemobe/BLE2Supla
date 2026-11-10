@@ -9,6 +9,7 @@
 #include <supla/network/html/status_led_parameters.h>
 #include <supla/network/html/wifi_parameters.h>
 #include "BleScanner.hpp"
+#include "SubDeviceInfoReporter.hpp"
 #include "devices/BLE_Sensor_Factory.hpp"
 #include "html/DeviceConfigurator.hpp"
 #include "html/BoardConfigHtml.hpp"
@@ -25,6 +26,7 @@ Supla::Html::DeviceConfigurator* bleCfg = nullptr;
 
 BleScanner scanner;
 ScannerResults gScannerResults;
+SubDeviceInfoReporter gSubDeviceInfoReporter;
 
 
 void setup() {
@@ -53,7 +55,7 @@ void setup() {
 
     initHtml();
 
-    SuplaDevice.begin();
+    SuplaDevice.begin(28);
 }
 
 
@@ -169,6 +171,7 @@ void initHtml()
                 {
                     delete pSensor;
                 }
+                pSensor->setSubDeviceId(devIdx + 1);
             }
         }
     }
