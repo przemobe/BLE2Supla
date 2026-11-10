@@ -10,9 +10,7 @@ extern Supla::Html::DeviceConfigurator* bleCfg;
 void SubDeviceInfoReporter::onRegistered(Supla::Protocol::SuplaSrpc *srpc)
 {
     this->srpc = srpc;
-    prevSendTime = millis();
-    nextDevIdx = 0;
-    deviceCount = (bleCfg ? bleCfg->getDeviceCount() : 0);
+    restart();
 }
 
 bool SubDeviceInfoReporter::iterateConnected()
@@ -47,4 +45,11 @@ bool SubDeviceInfoReporter::iterateConnected()
     prevSendTime = currTime;
 
     return false;
+}
+
+void SubDeviceInfoReporter::restart()
+{
+    prevSendTime = millis();
+    nextDevIdx = 0;
+    deviceCount = (bleCfg ? bleCfg->getDeviceCount() : 0);
 }

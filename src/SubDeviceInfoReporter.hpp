@@ -14,4 +14,5 @@ protected:
 public:
     void onRegistered(Supla::Protocol::SuplaSrpc *srpc) override;
     bool iterateConnected() override;
+    void restart();
 };

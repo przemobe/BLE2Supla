@@ -130,6 +130,7 @@ void initHtml()
     {
         setScannerParams();
         updateDeviceKeys();
+        gSubDeviceInfoReporter.restart();
     });
 
     printf("\n-------------------------------- BLE CONFIG DUMP [%u]\n", deviceCount);
