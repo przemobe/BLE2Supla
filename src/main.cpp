@@ -171,6 +171,7 @@ void initHtml()
                 if (false == scanner.addSensor(mac, pSensor))
                 {
                     delete pSensor;
+                    continue;
                 }
                 pSensor->setSubDeviceId(devIdx + 1);
             }

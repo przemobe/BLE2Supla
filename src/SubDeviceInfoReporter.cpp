@@ -37,7 +37,7 @@ bool SubDeviceInfoReporter::iterateConnected()
     snprintf(subdeviceDetails.Name, SUPLA_DEVICE_NAME_MAXSIZE - 1, "BLE %u", subdeviceDetails.SubDeviceId);
     // char SoftVer[SUPLA_SOFTVER_MAXSIZE]; - unused
     // char ProductCode[SUPLA_SUBDEVICE_PRODUCT_CODE_MAXSIZE]; - unused
-    strncpy(subdeviceDetails.SerialNumber, bleCfg->getMAC(nextDevIdx).c_str(), SUPLA_SUBDEVICE_SERIAL_NUMBER_MAXSIZE);
+    strncpy(subdeviceDetails.SerialNumber, bleCfg->getMAC(nextDevIdx).c_str(), SUPLA_SUBDEVICE_SERIAL_NUMBER_MAXSIZE - 1);
 
     srpc->sendSubdeviceDetails(&subdeviceDetails);
 
