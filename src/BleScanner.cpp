@@ -3,13 +3,11 @@
 #include "html/ScannerResults.hpp"
 #include "XMiBeacon.hpp"
 
-
 const NimBLEUUID BleScanner::NIM_BLEUUID_BTHOME(BTHOME_UUID);
 const NimBLEUUID BleScanner::NIM_BLEUUID_XMIBEACON(XMIBEACON_UUID);
 extern ScannerResults gScannerResults;
 
-
-BleScanner::BleScanner():
+BleScanner::BleScanner() :
     pBLEScan(nullptr),
     pBtHomeHandle(nullptr),
     lastScanMillis(0),
@@ -28,10 +26,9 @@ BleScanner::BleScanner():
     }
 }
 
-
-
-void BleScanner::init() {
-    pBLEScan = NimBLEDevice::getScan(); // create new scan
+void BleScanner::init()
+{
+    pBLEScan = NimBLEDevice::getScan();  // create new scan
     if (pBLEScan)
     {
         pBLEScan->setScanCallbacks(this, false);
@@ -46,11 +43,12 @@ void BleScanner::init() {
     }
 }
 
-
-void BleScanner::iterate() {
+void BleScanner::iterate()
+{
     static bool firstScan = true;
 
-    if ((millis() - lastScanMillis > scanIntervalMillis || firstScan) && pBLEScan && !pBLEScan->isScanning()) {
+    if ((millis() - lastScanMillis > scanIntervalMillis || firstScan) && pBLEScan && !pBLEScan->isScanning())
+    {
         lastScanMillis = millis();
         firstScan = false;
 
@@ -62,12 +60,11 @@ void BleScanner::iterate() {
     }
 }
 
-
-void BleScanner::setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis) {
+void BleScanner::setScanTiming(unsigned long scanTimeMillis, unsigned long scanIntervalMillis)
+{
     this->scanTimeMillis = scanTimeMillis;
     this->scanIntervalMillis = scanIntervalMillis;
 }
-
 
 bool BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
 {
@@ -92,7 +89,6 @@ bool BleScanner::addSensor(String ID, BLE_Sensor *pSensor)
     return false;
 }
 
-
 void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
 {
     for (SensorId &rSensorId : sensorsID)
@@ -108,7 +104,6 @@ void BleScanner::callSensors(const String &ID, JsonObject BLEdata)
         }
     }
 }
-
 
 String BleScanner::hexifyString(const std::string_view &data)
 {
@@ -128,25 +123,24 @@ String BleScanner::hexifyString(const std::string_view &data)
     return hexString;
 }
 
-
-void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
-
+void BleScanner::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
+{
     JsonObject BLEdata = doc.to<JsonObject>();
 
     const std::vector<uint8_t> &payload = advertisedDevice->getPayload();
 #ifdef APP_DEBUG
-    printf("[BLE] payload(%u)=%s\n", payload.size(), hexifyString({(const char*)payload.data(), payload.size()}).c_str());
+    printf("[BLE] payload(%u)=%s\n", payload.size(), hexifyString({(const char *)payload.data(), payload.size()}).c_str());
 #endif
 
     String mac_address = advertisedDevice->getAddress().toString().c_str();
     mac_address.toUpperCase();
 
-    BLEdata["id"] = (char*)mac_address.c_str();
+    BLEdata["id"] = (char *)mac_address.c_str();
     BLEdata["rssi"] = (int)advertisedDevice->getRSSI();
 
     if (advertisedDevice->haveName())
     {
-        BLEdata["name"] = (char*)advertisedDevice->getName().c_str();
+        BLEdata["name"] = (char *)advertisedDevice->getName().c_str();
     }
 
     if (advertisedDevice->haveTXPower())
@@ -166,8 +160,7 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         BLEdata["servicedatauuid"] = advertisedDevice->getServiceDataUUID(j).toString().c_str();
     }
 
-    if (serviceDataCount &&
-        (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_BTHOME) &&
+    if (serviceDataCount && (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_BTHOME) &&
         decodeBtHome(BLEdata, *advertisedDevice))
     {
 #ifdef APP_DEBUG
@@ -180,9 +173,8 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         gScannerResults.addResult(BLEdata);
         callSensors(mac_address, BLEdata);
     }
-    else if (serviceDataCount &&
-        (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_XMIBEACON) &&
-        decodeXMiBeacon(BLEdata, *advertisedDevice))
+    else if (serviceDataCount && (advertisedDevice->getServiceDataUUID(0) == NIM_BLEUUID_XMIBEACON) &&
+             decodeXMiBeacon(BLEdata, *advertisedDevice))
     {
 #ifdef APP_DEBUG
         std::string serializedJson;
@@ -228,7 +220,6 @@ void BleScanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
     }
 }
 
-
 template <typename ValueT>
 void addResultValue(JsonObject BLEdata, std::string key, ValueT value)
 {
@@ -239,7 +230,6 @@ void addResultValue(JsonObject BLEdata, std::string key, ValueT value)
 
     BLEdata[key] = value;
 }
-
 
 bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice)
 {
@@ -266,7 +256,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
         const uint64_t u64mac = static_cast<uint64_t>(peerMacAddr);
 
-        const uint8_t* peerKey = findBleKey(u64mac);
+        const uint8_t *peerKey = findBleKey(u64mac);
         if (nullptr == peerKey)
         {
             ESP_LOGW(TAG, "[BTHOME] Cannot acquire key for MAC=%012llX", u64mac);
@@ -274,7 +264,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         }
 
 #ifdef APP_DEBUG
-        printf("[BTHOME] peerKey=%s\n", BleScanner::hexifyString({(const char*)peerKey, 16}).c_str());
+        printf("[BTHOME] peerKey=%s\n", BleScanner::hexifyString({(const char *)peerKey, 16}).c_str());
 #endif
 
         ret = bthome_set_encrypt_key(pBtHomeHandle, peerKey);
@@ -293,7 +283,8 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         }
     }
 
-    bthome_reports_t *ptReports = bthome_parse_service_data(pBtHomeHandle, (const uint8_t*)serviceData.c_str(), serviceData.size());
+    bthome_reports_t *ptReports =
+        bthome_parse_service_data(pBtHomeHandle, (const uint8_t *)serviceData.c_str(), serviceData.size());
     if (nullptr == ptReports)
     {
         ESP_LOGE(TAG, "[BTHOME] bthome_parse_adv_data fail\n");
@@ -305,8 +296,8 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
     {
         const bthome_report_t &report = ptReports->report[rptIdx];
 #ifdef APP_DEBUG
-        printf("[BTHOME] rptIdx=%u/%u id=0x%02x len=%u data=%s\n", rptIdx+1, num_reports, report.id, report.len,
-            hexifyString({(const char*)report.data, report.len}).c_str());
+        printf("[BTHOME] rptIdx=%u/%u id=0x%02x len=%u data=%s\n", rptIdx + 1, num_reports, report.id, report.len,
+            hexifyString({(const char *)report.data, report.len}).c_str());
 #endif
 
         // BTHome data is Little Endian
@@ -314,7 +305,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
         {
             case BTHOME_SENSOR_ID_BATTERY:
             {
-                addResultValue(BLEdata, "batt", *((uint8_t*)report.data) * 1.0d);
+                addResultValue(BLEdata, "batt", *((uint8_t *)report.data) * 1.0d);
                 break;
             }
 
@@ -334,13 +325,13 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
 
             case BTHOME_SENSOR_ID_TEMPERATURE_1X00:
             {
-                addResultValue(BLEdata, "tempc", *((int8_t*)report.data) * 1.0d);
+                addResultValue(BLEdata, "tempc", *((int8_t *)report.data) * 1.0d);
                 break;
             }
 
             case BTHOME_SENSOR_ID_TEMPERATURE_0X35:
             {
-                addResultValue(BLEdata, "tempc", *((int8_t*)report.data) * 0.35d);
+                addResultValue(BLEdata, "tempc", *((int8_t *)report.data) * 0.35d);
                 break;
             }
 
@@ -353,7 +344,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
 
             case BTHOME_SENSOR_ID_HUMIDITY_1x00:
             {
-                addResultValue(BLEdata, "hum", *((uint8_t*)report.data) * 1.0d);
+                addResultValue(BLEdata, "hum", *((uint8_t *)report.data) * 1.0d);
                 break;
             }
 
@@ -362,7 +353,7 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
             case BTHOME_BIN_SENSOR_ID_OPENING:
             case BTHOME_BIN_SENSOR_ID_BATTERY ... BTHOME_BIN_SENSOR_ID_WINDOW:
             {
-                addResultValue(BLEdata, "open", (bool)(0x01 & *(uint8_t*)report.data));
+                addResultValue(BLEdata, "open", (bool)(0x01 & *(uint8_t *)report.data));
                 break;
             }
 
@@ -376,17 +367,17 @@ bool BleScanner::decodeBtHome(JsonObject BLEdata, const NimBLEAdvertisedDevice &
     return true;
 }
 
-
 bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevice &advertisedDevice)
 {
     const std::string serviceData = advertisedDevice.getServiceData(0);
-    const bool isEncrypted = xMiIsServiceDataEncrypted((uint8_t*)serviceData.c_str());
+    const bool isEncrypted = xMiIsServiceDataEncrypted((uint8_t *)serviceData.c_str());
     const NimBLEAddress peerMacAddr = advertisedDevice.getAddress();
     const uint8_t *macRev = peerMacAddr.getVal();
     const uint8_t *bindKey = nullptr;
 
 #ifdef APP_DEBUG
-    printf("[XMI] serviceData len(%u) enc(%u)=%s\n", serviceData.size(), isEncrypted, BleScanner::hexifyString({serviceData.c_str(), serviceData.size()}).c_str());
+    printf("[XMI] serviceData len(%u) enc(%u)=%s\n", serviceData.size(), isEncrypted,
+        BleScanner::hexifyString({serviceData.c_str(), serviceData.size()}).c_str());
 #endif
 
     if (isEncrypted)
@@ -402,22 +393,23 @@ bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevic
         }
 
 #ifdef APP_DEBUG
-        printf("[XMI] revMAC=%s\n", BleScanner::hexifyString({(const char*)macRev, 6}).c_str());
-        printf("[XMI] bindKey=%s\n", BleScanner::hexifyString({(const char*)bindKey, 16}).c_str());
+        printf("[XMI] revMAC=%s\n", BleScanner::hexifyString({(const char *)macRev, 6}).c_str());
+        printf("[XMI] bindKey=%s\n", BleScanner::hexifyString({(const char *)bindKey, 16}).c_str());
 #endif
     }
 
     const uint8_t *dataPointer = nullptr;
     size_t dataLength = 0;
     uint8_t buffer[64];
-    if (false == xMiBeaconGetData((const uint8_t*)serviceData.c_str(), serviceData.size(), bindKey, macRev, buffer, dataPointer, dataLength))
+    if (false == xMiBeaconGetData((const uint8_t *)serviceData.c_str(), serviceData.size(), bindKey, macRev, buffer,
+                     dataPointer, dataLength))
     {
         ESP_LOGE(TAG, "[XMI] xMiBeaconGetData fail");
         return false;
     }
 
 #ifdef APP_DEBUG
-    printf("[XMI] data(%u)=%s\n", dataLength, BleScanner::hexifyString({(const char*)dataPointer, dataLength}).c_str());
+    printf("[XMI] data(%u)=%s\n", dataLength, BleScanner::hexifyString({(const char *)dataPointer, dataLength}).c_str());
 #endif
 
     // Loop through the TLV container data chunk
@@ -544,8 +536,7 @@ bool BleScanner::decodeXMiBeacon(JsonObject BLEdata, const NimBLEAdvertisedDevic
     return true;
 }
 
-
-const uint8_t * BleScanner::findBleKey(const uint64_t u64mac) const
+const uint8_t *BleScanner::findBleKey(const uint64_t u64mac) const
 {
     for (const MacBleKey &rMacBleKey : macBleKeys)
     {
@@ -557,7 +548,6 @@ const uint8_t * BleScanner::findBleKey(const uint64_t u64mac) const
     return nullptr;
 }
 
-
 void BleScanner::setBleKey(const size_t devIdx, const uint64_t u64mac, const uint8_t *bleKey)
 {
     if (MAX_DEVICES_COUNT <= devIdx)
@@ -567,7 +557,6 @@ void BleScanner::setBleKey(const size_t devIdx, const uint64_t u64mac, const uin
     macBleKeys[devIdx].u64mac = u64mac;
     memcpy(macBleKeys[devIdx].bleKey, bleKey, sizeof(macBleKeys[devIdx].bleKey));
 }
-
 
 void BleScanner::clearBleKey(const size_t devIdx)
 {
