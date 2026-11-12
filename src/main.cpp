@@ -15,21 +15,20 @@
 #include "html/BoardConfigHtml.hpp"
 #include "html/ScannerResults.hpp"
 
-
-constexpr static const char* TAG = "BLE2SUPLA";
+constexpr static const char *TAG = "BLE2SUPLA";
 
 Supla::ESPWifi wifi;
 Supla::LittleFsConfig configSupla(1024 * 10);
 Supla::Control::Button cfgButton(GPIO_CFG_NUM, GPIO_CFG_PULL, GPIO_CFG_INVERT);
 Supla::EspWebServer suplaServer;
-Supla::Html::DeviceConfigurator* bleCfg = nullptr;
+Supla::Html::DeviceConfigurator *bleCfg = nullptr;
 
 BleScanner scanner;
 ScannerResults gScannerResults;
 SubDeviceInfoReporter gSubDeviceInfoReporter;
 
-
-void setup() {
+void setup()
+{
     Serial.begin(115200);
     Serial.println("Scanning...");
 
@@ -58,13 +57,15 @@ void setup() {
     SuplaDevice.begin(28);
 }
 
-
-void loop() {
+void loop()
+{
     SuplaDevice.iterate();
 
     static bool LOCAL_WEB_SERVER = false;
-    if (!LOCAL_WEB_SERVER) {
-        if (Supla::Network::IsReady()) {
+    if (!LOCAL_WEB_SERVER)
+    {
+        if (Supla::Network::IsReady())
+        {
             LOCAL_WEB_SERVER = true;
             SuplaDevice.handleAction(0, Supla::START_LOCAL_WEB_SERVER);
         }
@@ -72,7 +73,6 @@ void loop() {
 
     scanner.iterate();
 }
-
 
 void initHtml()
 {
@@ -126,12 +126,13 @@ void initHtml()
     setScannerParams();
     updateDeviceKeys();
 
-    bleCfg->OnSaveCallback([setScannerParams, updateDeviceKeys]()
-    {
-        setScannerParams();
-        updateDeviceKeys();
-        gSubDeviceInfoReporter.restart();
-    });
+    bleCfg->OnSaveCallback(
+        [setScannerParams, updateDeviceKeys]()
+        {
+            setScannerParams();
+            updateDeviceKeys();
+            gSubDeviceInfoReporter.restart();
+        });
 
     printf("\n-------------------------------- BLE CONFIG DUMP [%u]\n", deviceCount);
 
@@ -150,7 +151,6 @@ void initHtml()
         printf("--------------------------------\n");
     }
     printf("\n");
-
 
     const uint32_t validTimeMs = bleCfg->getValidTime() * 1000;
     for (uint8_t devIdx = 0; devIdx < deviceCount; devIdx++)

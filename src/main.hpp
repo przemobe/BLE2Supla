@@ -18,5 +18,4 @@
 #include <supla/storage/eeprom.h>
 #include <supla/storage/littlefs_config.h>
 
-
 void initHtml();

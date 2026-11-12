@@ -3,9 +3,7 @@
 #include "SubDeviceInfoReporter.hpp"
 #include "html/DeviceConfigurator.hpp"
 
-
-extern Supla::Html::DeviceConfigurator* bleCfg;
-
+extern Supla::Html::DeviceConfigurator *bleCfg;
 
 void SubDeviceInfoReporter::onRegistered(Supla::Protocol::SuplaSrpc *srpc)
 {
