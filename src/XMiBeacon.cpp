@@ -31,9 +31,9 @@ bool xMiBeaconDecrypt(const uint8_t *bindKey, const uint8_t *macReverse, const u
     }
 
     size_t payloadLen = totalLength - encryptedDataOffset - (XMIBEACON_RANDNUM_LEN + XMIBEACON_MIC_LEN);
-    const uint8_t* pEncData = &payload[encryptedDataOffset];
-    const uint8_t* pRandNum = &payload[encryptedDataOffset + payloadLen];
-    const uint8_t* pMIC = &payload[encryptedDataOffset + payloadLen + XMIBEACON_RANDNUM_LEN];
+    const uint8_t *pEncData = &payload[encryptedDataOffset];
+    const uint8_t *pRandNum = &payload[encryptedDataOffset + payloadLen];
+    const uint8_t *pMIC = &payload[encryptedDataOffset + payloadLen + XMIBEACON_RANDNUM_LEN];
 
     // Construct the 12-byte CCM Nonce: [MAC reversed (6B)] + [Product ID (2B)] + [Frame Counter (4B)]
     uint8_t nonce[XMIBEACON_NONCE_LEN];
@@ -60,26 +60,23 @@ bool xMiBeaconDecrypt(const uint8_t *bindKey, const uint8_t *macReverse, const u
     }
 
     // Perform authenticated decryption and integrity check
-    ret = mbedtls_ccm_auth_decrypt(&ctx, payloadLen,
-                                   nonce, XMIBEACON_NONCE_LEN,
-                                   &XMIBEACON_AUTHDATA, XMIBEACON_AUTHDATA_LEN,
-                                   pEncData, outPlaintext,
-                                   pMIC, XMIBEACON_MIC_LEN);
+    ret = mbedtls_ccm_auth_decrypt(&ctx, payloadLen, nonce, XMIBEACON_NONCE_LEN, &XMIBEACON_AUTHDATA, XMIBEACON_AUTHDATA_LEN,
+        pEncData, outPlaintext, pMIC, XMIBEACON_MIC_LEN);
 
     mbedtls_ccm_free(&ctx);
 
     if (0 != ret)
     {
         ESP_LOGE(XMIBEACON_TAG, "mbedtls_ccm_auth_decrypt failed, ret=%d", ret);
-        return false; // Authentication fail (wrong key or corrupted message)
+        return false;  // Authentication fail (wrong key or corrupted message)
     }
 
     outLen = payloadLen;
-    return true; // Success! MAC and payload are validated
+    return true;  // Success! MAC and payload are validated
 }
 
-bool xMiBeaconGetData(const uint8_t *serviceData, const size_t serviceDataLength, const uint8_t *bindKey, const uint8_t *inputMacRev,
-    uint8_t *buffer, const uint8_t *&rDataPtrOut, size_t &rDataLenOut)
+bool xMiBeaconGetData(const uint8_t *serviceData, const size_t serviceDataLength, const uint8_t *bindKey,
+    const uint8_t *inputMacRev, uint8_t *buffer, const uint8_t *&rDataPtrOut, size_t &rDataLenOut)
 {
     const uint8_t *macReverse = inputMacRev;
 
@@ -146,7 +143,8 @@ bool xMiBeaconGetData(const uint8_t *serviceData, const size_t serviceDataLength
             return false;
         }
 
-        if (false == xMiBeaconDecrypt(bindKey, macReverse, serviceData, serviceDataLength, payloadDataOffset, buffer, rDataLenOut))
+        if (false ==
+            xMiBeaconDecrypt(bindKey, macReverse, serviceData, serviceDataLength, payloadDataOffset, buffer, rDataLenOut))
         {
             ESP_LOGE(XMIBEACON_TAG, "xMiBeaconDecrypt failed");
             return false;
