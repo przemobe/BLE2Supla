@@ -15,7 +15,9 @@ public:
     BLE_Open_Sensor(uint32_t validTimeMs):
         BLE_Sensor(validTimeMs, channel),
         open(false)
-    {}
+    {
+        setDefaultFunction(SUPLA_CHANNELFNC_BINARY_SENSOR);
+    }
 
 private:
     virtual void onData(const String &MAC, JsonObject data)
