@@ -18,12 +18,15 @@ public:
     {}
 
 private:
-    virtual void onData(const String &MAC, JsonObject data) {
-        if (data["open"].is<bool>()){}
+    virtual void onData(const String &MAC, JsonObject data)
+    {
+        if (data["open"].is<bool>())
+        {
             open = data["open"].as<bool>();
 
-        printf("OPEN SENSOR '%s' -> %s\n", MAC.c_str(), open ? "open" : "close");
-        sendNewValue();
+            printf("OPEN SENSOR '%s' -> %s\n", MAC.c_str(), open ? "open" : "close");
+            sendNewValue();
+        }
     }
 
     virtual void onInvalidTime() { sendNewValue(); }
